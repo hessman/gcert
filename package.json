@@ -1,0 +1,23 @@
+{
+  "name": "gsub",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/cli-progress": "^3.9.2",
+    "@types/commander": "^2.12.2",
+    "axios": "^0.23.0",
+    "cli-progress": "^3.9.1",
+    "commander": "^8.3.0",
+    "tslib": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.10.3"
+  }
+}
