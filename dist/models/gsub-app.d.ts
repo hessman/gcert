@@ -12,6 +12,8 @@ export declare enum OutputFormat {
     html = "html"
 }
 export declare class GsubApp {
+    static readonly HEADER = "\n  __ _ ___ _   _| |__  \n / _` / __| | | | '_ \\ \n| (_| \\__ \\ |_| | |_) |\n \\__, |___/\\__,_|_.__/ \n |___/";
+    static readonly VERSION: any;
     static readonly DEFAULT_DEPTH_LEVEL = 0;
     static readonly DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
     static readonly GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
@@ -20,6 +22,6 @@ export declare class GsubApp {
     doneDomains: string[];
     options: GsubOptions;
     constructor();
-    getCNRecords(target?: string, depthLevel?: number): Promise<void>;
+    getCertificateRecords(target?: string, depthLevel?: number): Promise<void>;
     outputCertificateReports(): void;
 }

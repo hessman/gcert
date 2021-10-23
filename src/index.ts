@@ -1,14 +1,15 @@
 import { GsubApp } from "./models";
+import { log } from "./utils";
 
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   process.exit(2);
 });
 
 (async () => {
   const app = new GsubApp();
-  await app.getCNRecords();
+  await app.getCertificateRecords();
   app.outputCertificateReports();
 })().catch((err) => {
-  console.error(err);
+  log(err);
   process.exit(1);
 });

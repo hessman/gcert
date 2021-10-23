@@ -1,6 +1,9 @@
 import axios, { AxiosResponse } from "axios";
 import { Command, Option } from "commander";
+import stringify from "csv-stringify/lib/sync";
+import { Color, log, output } from "../utils";
 import { CertificateReport } from "./certificate-report";
+const pkg = require("./../../package.json");
 
 export interface GsubOptions {
   maxDepthLevel: number;
@@ -17,6 +20,14 @@ export enum OutputFormat {
 }
 
 export class GsubApp {
+  static readonly HEADER =
+    "\n\
+  __ _ ___ _   _| |__  \n\
+ / _` / __| | | | '_ \\ \n\
+| (_| \\__ \\ |_| | |_) |\n\
+ \\__, |___/\\__,_|_.__/ \n\
+ |___/";
+  static readonly VERSION = pkg.version;
   static readonly DEFAULT_DEPTH_LEVEL = 0;
   static readonly DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
   static readonly GOOGLE_BASE_URL =
@@ -42,7 +53,7 @@ export class GsubApp {
       .description(
         "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
       )
-      .version("0.1.0", "-v, --version", "output the current version")
+      .version(GsubApp.VERSION, "-v, --version", "output the current version")
       .requiredOption("-t, --target [domain]", "set the target domain")
       .addOption(
         new Option(
@@ -52,7 +63,7 @@ export class GsubApp {
       )
       .addOption(
         new Option(
-          "-o, --output-format",
+          "-o, --output-format [format]",
           "set the format for the report sent to stdout"
         )
           .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
@@ -70,6 +81,9 @@ export class GsubApp {
       .parse();
 
     const opts = program.opts();
+
+    log(GsubApp.HEADER);
+    log(GsubApp.VERSION + "\n");
 
     let { depthLevel, outputFormat, onlyResolved, target, denyList } = opts;
 
@@ -97,7 +111,7 @@ export class GsubApp {
     };
   }
 
-  async getCNRecords(
+  async getCertificateRecords(
     target: string = this.options.initialTarget,
     depthLevel: number = 0
   ): Promise<void> {
@@ -118,9 +132,7 @@ export class GsubApp {
       };
     }
 
-    console.error(
-      "\x1b[33m" + "Checking CN records for domain : " + target + "\x1b[0m"
-    );
+    log("Checking CN records for domain : " + target, Color.FgYellow);
     let nextPage: string | null = null;
 
     do {
@@ -151,11 +163,14 @@ export class GsubApp {
             if (this.options.onlyResolved && !ipAddr) {
               continue;
             }
-            const result = `${certificateReport.domain} - ${certificateReport.CN} - ${certificateReport.status} - ${certificateReport.ipAddr}`;
+            const { domain, commonName, resolvedIpAddress } = certificateReport;
+            const result = `${domain} - ${commonName} - ${
+              resolvedIpAddress ? resolvedIpAddress : "not resolved"
+            }`;
             if (httpStatus === 200) {
-              console.error("\x1b[32m" + result + "\x1b[0m");
+              log(result, Color.FgGreen);
             } else {
-              console.error(result);
+              log(result);
             }
             this.certificateReports.push(certificateReport);
           } catch (err) {
@@ -165,7 +180,7 @@ export class GsubApp {
         nextPage = footer[1];
       } catch (err) {
         if (!nextPage) {
-          console.error(`Invalid domain ${target}, skipping...`);
+          log(`Invalid domain ${target}, skipping...`, Color.FgRed);
         }
       }
     } while (nextPage);
@@ -173,7 +188,7 @@ export class GsubApp {
     if (depthLevel !== maxDepthLevel) {
       const ops = [];
       for (const domain of this.todoDomains) {
-        ops.push(this.getCNRecords(domain, depthLevel + 1));
+        ops.push(this.getCertificateRecords(domain, depthLevel + 1));
       }
       await Promise.all(ops);
     }
@@ -182,11 +197,55 @@ export class GsubApp {
   outputCertificateReports() {
     switch (this.options.outputFormat) {
       case OutputFormat.json:
-        return console.log(JSON.stringify(this.certificateReports));
+        output(JSON.stringify(this.certificateReports));
+        break;
       case OutputFormat.csv:
-        return console.log(JSON.stringify(this.certificateReports));
+        const columns: Array<{
+          key: keyof CertificateReport;
+          header: string;
+        }> = [
+          {
+            key: "queriedDomain",
+            header: "Queried domain",
+          },
+          {
+            key: "domain",
+            header: "Domain",
+          },
+          {
+            key: "commonName",
+            header: "Common name",
+          },
+          {
+            key: "date",
+            header: "Last certificate issuance date",
+          },
+          {
+            key: "resolvedIpAddress",
+            header: "Resolved IP address",
+          },
+          {
+            key: "httpStatus",
+            header: "HTTP status (GET / port 80)",
+          },
+        ];
+        output(
+          stringify(this.certificateReports, {
+            columns,
+            header: true,
+            bom: true,
+            record_delimiter: "windows",
+            cast: {
+              date(value) {
+                return value.toISOString();
+              },
+            },
+          })
+        );
+        break;
       case OutputFormat.html:
-        return console.log(JSON.stringify(this.certificateReports));
+        output(JSON.stringify(this.certificateReports));
+        break;
       default:
         break;
     }

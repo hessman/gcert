@@ -1,2 +1,2 @@
-export * from './certificate-report';
-export * from './gsub-app';
+export * from "./certificate-report";
+export * from "./gsub-app";

@@ -4,7 +4,10 @@ exports.GsubApp = exports.OutputFormat = void 0;
 const tslib_1 = require("tslib");
 const axios_1 = (0, tslib_1.__importDefault)(require("axios"));
 const commander_1 = require("commander");
+const sync_1 = (0, tslib_1.__importDefault)(require("csv-stringify/lib/sync"));
+const utils_1 = require("../utils");
 const certificate_report_1 = require("./certificate-report");
+const pkg = require("./../../package.json");
 var OutputFormat;
 (function (OutputFormat) {
     OutputFormat["json"] = "json";
@@ -28,16 +31,18 @@ class GsubApp {
             .name("gsub")
             .usage("-t domain.tld -d google.com google.fr -o json > report.json")
             .description("Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
-            .version("0.1.0", "-v, --version", "output the current version")
+            .version(GsubApp.VERSION, "-v, --version", "output the current version")
             .requiredOption("-t, --target [domain]", "set the target domain")
             .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
-            .addOption(new commander_1.Option("-o, --output-format", "set the format for the report sent to stdout")
+            .addOption(new commander_1.Option("-o, --output-format [format]", "set the format for the report sent to stdout")
             .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
             .default("html"))
             .addOption(new commander_1.Option("-r, --only-resolved", "only output resolved domain"))
             .addOption(new commander_1.Option("-d, --deny-list [domain...]", "set the deny list for domain"))
             .parse();
         const opts = program.opts();
+        (0, utils_1.log)(GsubApp.HEADER);
+        (0, utils_1.log)(GsubApp.VERSION + "\n");
         let { depthLevel, outputFormat, onlyResolved, target, denyList } = opts;
         const maxDepthLevel = depthLevel === undefined || isNaN(+depthLevel)
             ? GsubApp.DEFAULT_DEPTH_LEVEL
@@ -57,7 +62,7 @@ class GsubApp {
             initialTarget: target,
         };
     }
-    async getCNRecords(target = this.options.initialTarget, depthLevel = 0) {
+    async getCertificateRecords(target = this.options.initialTarget, depthLevel = 0) {
         const { maxDepthLevel } = this.options;
         this.doneDomains.push(target);
         function parseGoogleResponse(res) {
@@ -69,7 +74,7 @@ class GsubApp {
                 footer: f,
             };
         }
-        console.error("\x1b[33m" + "Checking CN records for domain : " + target + "\x1b[0m");
+        (0, utils_1.log)("Checking CN records for domain : " + target, utils_1.Color.FgYellow);
         let nextPage = null;
         do {
             const URL = nextPage
@@ -98,12 +103,13 @@ class GsubApp {
                         if (this.options.onlyResolved && !ipAddr) {
                             continue;
                         }
-                        const result = `${certificateReport.domain} - ${certificateReport.CN} - ${certificateReport.status} - ${certificateReport.ipAddr}`;
+                        const { domain, commonName, resolvedIpAddress } = certificateReport;
+                        const result = `${domain} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`;
                         if (httpStatus === 200) {
-                            console.error("\x1b[32m" + result + "\x1b[0m");
+                            (0, utils_1.log)(result, utils_1.Color.FgGreen);
                         }
                         else {
-                            console.error(result);
+                            (0, utils_1.log)(result);
                         }
                         this.certificateReports.push(certificateReport);
                     }
@@ -115,14 +121,14 @@ class GsubApp {
             }
             catch (err) {
                 if (!nextPage) {
-                    console.error(`Invalid domain ${target}, skipping...`);
+                    (0, utils_1.log)(`Invalid domain ${target}, skipping...`, utils_1.Color.FgRed);
                 }
             }
         } while (nextPage);
         if (depthLevel !== maxDepthLevel) {
             const ops = [];
             for (const domain of this.todoDomains) {
-                ops.push(this.getCNRecords(domain, depthLevel + 1));
+                ops.push(this.getCertificateRecords(domain, depthLevel + 1));
             }
             await Promise.all(ops);
         }
@@ -130,17 +136,63 @@ class GsubApp {
     outputCertificateReports() {
         switch (this.options.outputFormat) {
             case OutputFormat.json:
-                return console.log(JSON.stringify(this.certificateReports));
+                (0, utils_1.output)(JSON.stringify(this.certificateReports));
+                break;
             case OutputFormat.csv:
-                return console.log(JSON.stringify(this.certificateReports));
+                const columns = [
+                    {
+                        key: "queriedDomain",
+                        header: "Queried domain",
+                    },
+                    {
+                        key: "domain",
+                        header: "Domain",
+                    },
+                    {
+                        key: "commonName",
+                        header: "Common name",
+                    },
+                    {
+                        key: "date",
+                        header: "Last certificate issuance date",
+                    },
+                    {
+                        key: "resolvedIpAddress",
+                        header: "Resolved IP address",
+                    },
+                    {
+                        key: "httpStatus",
+                        header: "HTTP status (GET / port 80)",
+                    },
+                ];
+                (0, utils_1.output)((0, sync_1.default)(this.certificateReports, {
+                    columns,
+                    header: true,
+                    bom: true,
+                    record_delimiter: "windows",
+                    cast: {
+                        date(value) {
+                            return value.toISOString();
+                        },
+                    },
+                }));
+                break;
             case OutputFormat.html:
-                return console.log(JSON.stringify(this.certificateReports));
+                (0, utils_1.output)(JSON.stringify(this.certificateReports));
+                break;
             default:
                 break;
         }
     }
 }
 exports.GsubApp = GsubApp;
+GsubApp.HEADER = "\n\
+  __ _ ___ _   _| |__  \n\
+ / _` / __| | | | '_ \\ \n\
+| (_| \\__ \\ |_| | |_) |\n\
+ \\__, |___/\\__,_|_.__/ \n\
+ |___/";
+GsubApp.VERSION = pkg.version;
 GsubApp.DEFAULT_DEPTH_LEVEL = 0;
 GsubApp.DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
 GsubApp.GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
