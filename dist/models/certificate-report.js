@@ -27,6 +27,7 @@ class CertificateReport {
         if (!app.todoDomains.includes(domain) &&
             !app.doneDomains.includes(domain) &&
             !app.options.denyList.includes(domain)) {
+            console.error("\x1b[34m" + "New domain found : " + domain + "\x1b[0m");
             app.todoDomains.push(domain);
         }
         this.CN = CN;

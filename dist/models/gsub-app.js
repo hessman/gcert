@@ -25,10 +25,15 @@ class GsubApp {
         };
         const program = new commander_1.Command();
         program
+            .name("gsub")
+            .usage("-t domain.tld -d google.com google.fr -o json > report.json")
+            .description("Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
             .version("0.1.0", "-v, --version", "output the current version")
             .requiredOption("-t, --target [domain]", "set the target domain")
-            .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery"))
-            .addOption(new commander_1.Option("-o, --output-format", "set the format for the report sent to stdout").choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json]))
+            .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
+            .addOption(new commander_1.Option("-o, --output-format", "set the format for the report sent to stdout")
+            .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
+            .default("html"))
             .addOption(new commander_1.Option("-r, --only-resolved", "only output resolved domain"))
             .addOption(new commander_1.Option("-d, --deny-list [domain...]", "set the deny list for domain"))
             .parse();
