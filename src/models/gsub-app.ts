@@ -1,24 +1,25 @@
-import axios, { AxiosResponse } from 'axios';
-import { Command, Option } from 'commander';
-import stringify from 'csv-stringify/lib/sync';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { Color, log, output } from '../utils';
-import { CertificateReport } from './certificate-report';
-const pkg = require('./../../package.json');
+import axios, { AxiosResponse } from "axios";
+import { Command, Option } from "commander";
+import stringify from "csv-stringify/lib/sync";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { Color, log, output } from "../utils";
+import { CertificateReport } from "./certificate-report";
+const pkg = require("./../../package.json");
 
 export interface GsubOptions {
   maxDepthLevel: number;
   outputFormat: OutputFormat;
   onlyResolved: boolean;
+  resolve: boolean;
   denyList: string[];
   initialTarget: string;
 }
 
 export enum OutputFormat {
-  json = 'json',
-  csv = 'csv',
-  html = 'html',
+  json = "json",
+  csv = "csv",
+  html = "html",
 }
 
 interface ChartData {
@@ -48,7 +49,7 @@ export class GsubApp {
   static readonly DEFAULT_DEPTH_LEVEL = 0;
   static readonly DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
   static readonly GOOGLE_BASE_URL =
-    'https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch';
+    "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
 
   public certificateReports: CertificateReport[] = [];
   public todoDomains: string[] = [];
@@ -59,40 +60,44 @@ export class GsubApp {
     outputFormat: OutputFormat.html,
     onlyResolved: false,
     denyList: [],
-    initialTarget: '',
+    resolve: false,
+    initialTarget: "",
   };
 
   constructor() {
     const program = new Command();
     program
-      .name('gsub')
-      .usage('-t domain.tld -d google.com google.fr -o json > report.json')
+      .name("gsub")
+      .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
       .description(
-        'Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.'
+        "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
       )
-      .version(GsubApp.VERSION, '-v, --version', 'output the current version')
-      .requiredOption('-t, --target [domain]', 'set the target domain')
+      .version(GsubApp.VERSION, "-v, --version", "output the current version")
+      .requiredOption("-t, --target [domain]", "set the target domain")
       .addOption(
         new Option(
-          '-l, --depth-level <level>',
-          'set the depth level for the recursive domain discovery'
-        ).default('0')
+          "-l, --depth-level <level>",
+          "set the depth level for the recursive domain discovery"
+        ).default("0")
       )
       .addOption(
         new Option(
-          '-o, --output-format [format]',
-          'set the format for the report sent to stdout'
+          "-o, --output-format [format]",
+          "set the format for the report sent to stdout"
         )
           .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
-          .default('html')
+          .default("html")
       )
       .addOption(
-        new Option('-r, --only-resolved', 'only output resolved domain')
+        new Option("-R, --only-resolved", "only output resolved domains")
+      )
+      .addOption(
+        new Option("-r, --resolve", "perform DNS and HTTP/S checks on domains")
       )
       .addOption(
         new Option(
-          '-d, --deny-list [domain...]',
-          'set the deny list for domain'
+          "-d, --deny-list [domain...]",
+          "set the deny list for domains"
         )
       )
       .parse();
@@ -100,9 +105,10 @@ export class GsubApp {
     const opts = program.opts();
 
     log(GsubApp.HEADER);
-    log(GsubApp.VERSION + '\n');
+    log(GsubApp.VERSION + "\n");
 
-    let { depthLevel, outputFormat, onlyResolved, target, denyList } = opts;
+    let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } =
+      opts;
 
     const maxDepthLevel =
       depthLevel === undefined || isNaN(+depthLevel)
@@ -114,6 +120,7 @@ export class GsubApp {
     }
 
     onlyResolved = !!onlyResolved;
+    resolve = !!resolve;
 
     if (!Array.isArray(denyList)) {
       denyList = [];
@@ -124,6 +131,7 @@ export class GsubApp {
       outputFormat,
       onlyResolved,
       denyList,
+      resolve,
       initialTarget: target,
     };
   }
@@ -153,7 +161,7 @@ export class GsubApp {
 
     do {
       const URL = nextPage
-        ? GsubApp.GOOGLE_BASE_URL + '/page'
+        ? GsubApp.GOOGLE_BASE_URL + "/page"
         : GsubApp.GOOGLE_BASE_URL;
       const params = nextPage
         ? {
@@ -181,10 +189,12 @@ export class GsubApp {
           const cert = certs[i];
           try {
             const certificateReport = new CertificateReport(cert, this, target);
-            const [ipAddr, httpStatus] = await Promise.all([
-              certificateReport.resolve(),
-              certificateReport.getHttpStatus(),
-            ]);
+            const [ipAddr, httpStatus] = this.options.resolve
+              ? await Promise.all([
+                  certificateReport.resolve(),
+                  certificateReport.getHttpStatus(),
+                ])
+              : [undefined, undefined];
             if (this.options.onlyResolved && !ipAddr) {
               continue;
             }
@@ -200,7 +210,7 @@ export class GsubApp {
               `${target} - ${
                 i + 1 + currentMultiplier(currentPage - 1)
               }/${currentMultiplier(pageCount)} - ${commonName} - ${
-                resolvedIpAddress ? resolvedIpAddress : 'not resolved'
+                resolvedIpAddress ? resolvedIpAddress : "not resolved"
               }`,
               color
             );
@@ -217,8 +227,11 @@ export class GsubApp {
 
     if (depthLevel !== maxDepthLevel) {
       const ops = [];
-      for (const domain of this.todoDomains) {
+      for (let i = 0; i < this.todoDomains.length; i++) {
+        const domain = this.todoDomains[i];
+        this.doneDomains.push(domain);
         ops.push(this.getCertificateRecords(domain, depthLevel + 1));
+        this.todoDomains.splice(i, 1);
       }
       await Promise.all(ops);
     }
@@ -235,28 +248,28 @@ export class GsubApp {
           header: string;
         }> = [
           {
-            key: 'queriedDomain',
-            header: 'Queried domain',
+            key: "queriedDomain",
+            header: "Queried domain",
           },
           {
-            key: 'domain',
-            header: 'Domain',
+            key: "domain",
+            header: "Domain",
           },
           {
-            key: 'commonName',
-            header: 'Common name',
+            key: "commonName",
+            header: "Common name",
           },
           {
-            key: 'lastIssuanceDate',
-            header: 'Last certificate issuance date',
+            key: "lastIssuanceDate",
+            header: "Last certificate issuance date",
           },
           {
-            key: 'resolvedIpAddress',
-            header: 'Resolved IP address',
+            key: "resolvedIpAddress",
+            header: "Resolved IP address",
           },
           {
-            key: 'httpStatus',
-            header: 'HTTP status (GET / port 80)',
+            key: "httpStatus",
+            header: "HTTP/S status (GET)",
           },
         ];
         output(
@@ -264,7 +277,7 @@ export class GsubApp {
             columns,
             header: true,
             bom: true,
-            record_delimiter: 'windows',
+            record_delimiter: "windows",
             cast: {
               date(value) {
                 return value.toISOString();
@@ -283,7 +296,7 @@ export class GsubApp {
   <title>Report</title>
   <style>  
     ${readFileSync(
-      join(process.cwd(), 'assets', 'css', 'index.css')
+      join(process.cwd(), "assets", "css", "index.css")
     ).toString()}    
   </style>
 </head>
@@ -309,7 +322,7 @@ export class GsubApp {
 <script src="https://cdn.amcharts.com/lib/4/plugins/forceDirected.js"></script> 
 <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 <script>
-  ${readFileSync(join(process.cwd(), 'assets', 'js', 'index.js')).toString()}
+  ${readFileSync(join(process.cwd(), "assets", "js", "index.js")).toString()}
 
   var baseChartData = JSON.parse('${JSON.stringify(
     this.certificateReports.map((item) => ({
