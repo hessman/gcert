@@ -7,8 +7,6 @@ const promises_1 = (0, tslib_1.__importDefault)(require("dns/promises"));
 const utils_1 = require("../utils");
 class CertificateReport {
     constructor(data, app, queriedDomain) {
-        this.httpStatus = null;
-        this.resolvedIpAddress = null;
         if (!data[1] || !data[3]) {
             throw new Error("Missing common name or timestamp index in certificate data array");
         }
@@ -43,11 +41,25 @@ class CertificateReport {
         this.lastIssuanceDate = new Date(timestamp);
     }
     async getHttpStatus() {
+        var _a;
         try {
             if (this.commonName.includes("*"))
                 return;
-            const response = await axios_1.default.get("http://" + this.commonName);
-            this.httpStatus = response.status;
+            const op = async (protocol) => {
+                try {
+                    return await axios_1.default.get(`${protocol}://${this.commonName}`, {
+                        timeout: 5000,
+                    });
+                }
+                catch (err) {
+                    return undefined;
+                }
+            };
+            const [httpResponse, httpsResponse] = await Promise.all([
+                op("http"),
+                op("https"),
+            ]);
+            this.httpStatus = (_a = httpsResponse === null || httpsResponse === void 0 ? void 0 : httpsResponse.status) !== null && _a !== void 0 ? _a : httpResponse === null || httpResponse === void 0 ? void 0 : httpResponse.status;
             return this.httpStatus;
         }
         catch (err) { }

@@ -154,7 +154,10 @@ export class GsubApp {
         const { certs, footer } = parseGoogleResponse(response);
         const pageCount = +footer[4];
         if (!nextPage) {
-          log(`Start processing ${pageCount * 10} reports for ${target}`, Color.FgCyan);
+          log(
+            `Start processing ${pageCount * 10} reports for ${target}`,
+            Color.FgCyan
+          );
         }
         const currentPage = +footer[3];
         for (let i = 0; i < certs.length; i++) {

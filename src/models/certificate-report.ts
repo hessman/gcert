@@ -10,8 +10,8 @@ export class CertificateReport {
   public commonName: string;
   public queriedDomain: string;
   public lastIssuanceDate: Date;
-  public httpStatus: number | null = null;
-  public resolvedIpAddress: string | null = null;
+  public httpStatus?: number;
+  public resolvedIpAddress?: string;
 
   constructor(data: any, app: GsubApp, queriedDomain: string) {
     if (!data[1] || !data[3]) {
@@ -57,8 +57,20 @@ export class CertificateReport {
   async getHttpStatus(): Promise<number | undefined> {
     try {
       if (this.commonName.includes("*")) return;
-      const response = await axios.get("http://" + this.commonName);
-      this.httpStatus = response.status;
+      const op = async (protocol: "http" | "https") => {
+        try {
+          return await axios.get(`${protocol}://${this.commonName}`, {
+            timeout: 5000,
+          });
+        } catch (err) {
+          return undefined;
+        }
+      };
+      const [httpResponse, httpsResponse] = await Promise.all([
+        op("http"),
+        op("https"),
+      ]);
+      this.httpStatus = httpsResponse?.status ?? httpResponse?.status;
       return this.httpStatus;
     } catch (err) {}
   }

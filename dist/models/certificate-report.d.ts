@@ -5,8 +5,8 @@ export declare class CertificateReport {
     commonName: string;
     queriedDomain: string;
     lastIssuanceDate: Date;
-    httpStatus: number | null;
-    resolvedIpAddress: string | null;
+    httpStatus?: number;
+    resolvedIpAddress?: string;
     constructor(data: any, app: GsubApp, queriedDomain: string);
     getHttpStatus(): Promise<number | undefined>;
     resolve(): Promise<string | undefined>;
