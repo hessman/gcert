@@ -1,0 +1,74 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input[type='submit'],
+input[type='reset'] {
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+main > * {
+  width: 100%;
+}
+
+#chartdiv {
+  height: 100%;
+}
+
+main input[type='radio'] {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  text-transform: uppercase;
+  border-radius: 5%;
+}
+
+main label.radio-label,
+main label.date-label {
+  padding: 0.75rem;
+  margin-left: 0.5rem;
+  text-transform: uppercase;
+  border-radius: 5%;
+}
+
+main label.radio-label {
+  padding-left: 0;
+  margin-right: 0.5rem;
+}
+
+main label.date-label {
+  padding-right: 0;
+  margin-left: 0.5rem;
+  margin-right: 0.25rem;
+}
+
+main label.date-label:first-of-type {
+  margin-left: 2rem;
+}
+
+main nav {
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,4 +1,4 @@
-import { CertificateReport } from "./certificate-report";
+import { CertificateReport } from './certificate-report';
 export interface GsubOptions {
     maxDepthLevel: number;
     outputFormat: OutputFormat;
