@@ -324,9 +324,15 @@ export class GsubApp {
           <label class="radio-label" for="domains-links">Links between domains</label>
         </li>
         <li id="wordcloud-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="changeChartOptions({ links: event.target.checked })" checked />
+          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="changeChartOptions({
+            links: event.target.checked,
+            domains: document.getElementById('wordcloud-domains').checked,
+          })" checked />
           <label class="radio-label" for="wordcloud-links">Links between words</label>
-          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="changeChartOptions({ domains: event.target.checked })" />
+          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="changeChartOptions({
+            links: document.getElementById('wordcloud-links').checked,
+            domains: event.target.checked,
+          })" />
           <label class="radio-label" for="wordcloud-domains">Show domains</label>
         </li>
         <li>

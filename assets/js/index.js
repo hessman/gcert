@@ -1,44 +1,3 @@
-function getCertificateReportsGroupedPerDomain(links = false) {
-  const addedDomains = new Map();
-  const data = [];
-
-  const getDomainIndex = (domain) => {
-    let domainIndex = addedDomains.get(domain);
-    if (domainIndex === undefined) {
-      const index =
-        data.push({
-          id: 'domain-' + domain,
-          name: domain,
-          value: 40,
-          linkWith: [],
-          children: [],
-        }) - 1;
-      addedDomains.set(domain, index);
-      domainIndex = index;
-    }
-    return domainIndex;
-  };
-
-  for (const certificateReport of baseChartData) {
-    const domainIndex = getDomainIndex(certificateReport.queriedDomain);
-    const currentDomainIndex = getDomainIndex(certificateReport.domain);
-    data[domainIndex].value = (data[domainIndex].value ?? 0) + 1;
-    data[currentDomainIndex].value = (data[currentDomainIndex].value ?? 0) + 1;
-    data[currentDomainIndex].children.push({
-      id: 'cn-' + certificateReport.commonName,
-      name: certificateReport.commonName,
-      value: 25,
-      linkWith: !links ? [] : ['domain-' + certificateReport.queriedDomain],
-      httpStatus: certificateReport.httpStatus,
-      resolvedIpAddress: certificateReport.resolvedIpAddress,
-      lastIssuanceDate: certificateReport.date
-        ? new Date(certificateReport.date)
-        : null,
-    });
-  }
-  return data;
-}
-
 function getCertificateReportsGroupedPerIp() {
   const addedIps = new Map();
   const data = [];
@@ -147,13 +106,225 @@ function getCertificateReportsWordcloud(options) {
 let PER_DOMAIN = { links: null, base: null };
 let PER_IP = null;
 let CHART_DATA_UNFILTERED = null;
-let WORDCLOUD = { links: null, base: null };
-let WORDCLOUD_WITH_DOMAINS = { links: null, base: null };
+let WORDCLOUD = {
+  base: { links: null, base: null },
+  domains: { links: null, base: null },
+};
 
 let START_DATE = null;
 let END_DATE = null;
 
-am4core.useTheme(am4themes_animated);
+function setupChartDatas() {
+  const addedDomains = new Map();
+  const addedIps = new Map();
+  const addedWords = new Map();
+  const perDomainData = { links: [], base: [] };
+  const perIpData = [];
+  const wordcloudData = {
+    base: { links: [], base: [] },
+    domains: { links: [], base: [] },
+  };
+
+  const getDomainIndex = (domain) => {
+    let domainIndex = addedDomains.get(domain);
+    if (domainIndex === undefined) {
+      const payload = {
+        id: 'domain-' + domain,
+        name: domain,
+        value: 40,
+      };
+      const index =
+        perDomainData.base.push({ ...payload, linkWith: [], children: [] }) - 1;
+      perDomainData.links.push({ ...payload, linkWith: [], children: [] });
+      addedDomains.set(domain, index);
+      domainIndex = index;
+    }
+    return domainIndex;
+  };
+
+  for (const certificateReport of baseChartData) {
+    const domainIndex = getDomainIndex(certificateReport.queriedDomain);
+    const currentDomainIndex = getDomainIndex(certificateReport.domain);
+    const domainNewValue = (perDomainData.base[domainIndex].value ?? 0) + 1;
+    const curentDomainNewValue =
+      (perDomainData.base[currentDomainIndex].value ?? 0) + 1;
+    perDomainData.base[domainIndex].value = domainNewValue;
+    perDomainData.links[domainIndex].value = domainNewValue;
+    perDomainData.base[currentDomainIndex].value = curentDomainNewValue;
+    perDomainData.links[currentDomainIndex].value = curentDomainNewValue;
+    const commonNamePayload = {
+      id: 'cn-' + certificateReport.commonName,
+      name: certificateReport.commonName,
+      value: 25,
+      linkWith: [],
+      httpStatus: certificateReport.httpStatus,
+      resolvedIpAddress: certificateReport.resolvedIpAddress,
+      lastIssuanceDate: certificateReport.date
+        ? new Date(certificateReport.date)
+        : null,
+    };
+    perDomainData.base[currentDomainIndex].children.push(commonNamePayload);
+    perDomainData.links[currentDomainIndex].children.push({
+      ...commonNamePayload,
+      linkWith: ['domain-' + certificateReport.queriedDomain],
+    });
+
+    if (certificateReport.resolvedIpAddress) {
+      let ipIndex = addedIps.get(certificateReport.resolvedIpAddress);
+      if (ipIndex === undefined) {
+        const index =
+          perIpData.push({
+            id: 'ip-' + certificateReport.resolvedIpAddress,
+            name: certificateReport.resolvedIpAddress,
+            value: 40,
+            linkWith: [],
+            children: [],
+          }) - 1;
+        addedIps.set(certificateReport.resolvedIpAddress, index);
+        ipIndex = index;
+      }
+      perIpData[ipIndex].value = (perIpData[ipIndex].value ?? 0) + 1;
+      perIpData[ipIndex].children.push({
+        id: 'cn-' + certificateReport.commonName,
+        name: certificateReport.commonName,
+        value: 25,
+        linkWith: [],
+        httpStatus: certificateReport.httpStatus,
+        resolvedIpAddress: certificateReport.resolvedIpAddress,
+        lastIssuanceDate: certificateReport.date
+          ? new Date(certificateReport.date)
+          : null,
+      });
+    }
+
+    const commonNameSplitted = [
+      ...new Set(certificateReport.commonName.split('.').slice(0, -2)),
+    ];
+    if (!!commonNameSplitted.length) {
+      for (const word of commonNameSplitted) {
+        let wordIndex = addedWords.get(word);
+        if (wordIndex === undefined) {
+          const payload = {
+            id: 'word-' + word,
+            name: word,
+            value: 20,
+          };
+          const index =
+            wordcloudData.base.base.push({
+              ...payload,
+              linkWith: [],
+              children: [],
+            }) - 1;
+          wordcloudData.base.links.push({
+            ...payload,
+            linkWith: [],
+            children: [],
+          });
+          wordcloudData.domains.base.push({
+            ...payload,
+            linkWith: [],
+            children: [],
+          });
+          wordcloudData.domains.links.push({
+            ...payload,
+            linkWith: [],
+            children: [],
+          });
+          addedWords.set(word, index);
+          wordIndex = index;
+        }
+        const newValue = (wordcloudData.base.base[wordIndex].value ?? 0) + 1;
+        wordcloudData.base.base[wordIndex].value = newValue;
+        wordcloudData.base.links[wordIndex].value = newValue;
+        wordcloudData.domains.base[wordIndex].value = newValue;
+        wordcloudData.domains.links[wordIndex].value = newValue;
+        const wordLinks = [
+          ...new Set([
+            ...commonNameSplitted
+              .filter((w) => w !== word)
+              .map((w) => 'word-' + w),
+            ...wordcloudData.base.links[wordIndex].linkWith,
+          ]),
+        ];
+        wordcloudData.base.links[wordIndex].linkWith = wordLinks;
+        wordcloudData.domains.links[wordIndex].linkWith = wordLinks;
+        const wordcloudCommonNamePayload = {
+          id: 'cn-' + certificateReport.commonName,
+          name: certificateReport.commonName,
+          value: 15,
+          httpStatus: certificateReport.httpStatus,
+          resolvedIpAddress: certificateReport.resolvedIpAddress,
+          lastIssuanceDate: certificateReport.date
+            ? new Date(certificateReport.date)
+            : null,
+        };
+        wordcloudData.domains.base[wordIndex].children.push({
+          ...wordcloudCommonNamePayload,
+          linkWith: [],
+        });
+        wordcloudData.domains.links[wordIndex].children.push({
+          ...wordcloudCommonNamePayload,
+          linkWith: [],
+        });
+        if (wordcloudData.base.base[wordIndex].children.length === 1) {
+          wordcloudData.base.base[wordIndex].children[0].count += 1;
+          wordcloudData.base.base[wordIndex].children[0].name =
+            wordcloudData.base.base[wordIndex].children[0].count.toString() +
+            ' occurrences';
+          wordcloudData.base.links[wordIndex].children[0].count =
+            wordcloudData.base.base[wordIndex].children[0].count;
+          wordcloudData.base.links[wordIndex].children[0].name =
+            wordcloudData.base.base[wordIndex].children[0].name;
+          wordcloudData.base.base[wordIndex].children[0].lastIssuanceDate.push(
+            certificateReport.lastIssuanceDate
+          );
+          wordcloudData.base.links[wordIndex].children[0].lastIssuanceDate.push(
+            certificateReport.lastIssuanceDate
+          );
+        } else {
+          const occurrencesPayload = {
+            id: 'count-' + word,
+            name: '1 occurrences',
+            value: 15,
+            count: 1,
+          };
+          wordcloudData.base.base[wordIndex].children.push({
+            ...occurrencesPayload,
+            linkWith: [],
+            lastIssuanceDate: [certificateReport.lastIssuanceDate],
+          });
+          wordcloudData.base.links[wordIndex].children.push({
+            ...occurrencesPayload,
+            linkWith: [],
+            lastIssuanceDate: [certificateReport.lastIssuanceDate],
+          });
+        }
+      }
+    }
+  }
+
+  if (!PER_DOMAIN.base) {
+    PER_DOMAIN.base = perDomainData.base;
+  }
+  if (!PER_DOMAIN.links) {
+    PER_DOMAIN.links = perDomainData.links;
+  }
+  if (!PER_IP) {
+    PER_IP = perIpData;
+  }
+  if (!WORDCLOUD.base.base) {
+    WORDCLOUD.base.base = wordcloudData.base.base;
+  }
+  if (!WORDCLOUD.base.links) {
+    WORDCLOUD.base.links = wordcloudData.base.links;
+  }
+  if (!WORDCLOUD.domains.base) {
+    WORDCLOUD.domains.base = wordcloudData.domains.base;
+  }
+  if (!WORDCLOUD.domains.links) {
+    WORDCLOUD.domains.links = wordcloudData.domains.links;
+  }
+}
 
 const circleLabelSize = 15;
 const resolvedIpAddressLabelSize = 10;
@@ -162,6 +333,7 @@ let chart;
 let networkSeries;
 let nodeTemplate;
 
+am4core.useTheme(am4themes_animated);
 function createChart() {
   if (chart) {
     chart.dispose();
@@ -243,35 +415,6 @@ function getLastIssuanceDateString(lastIssuanceDate) {
   );
 }
 
-function setupChartDatas() {
-  if (!PER_DOMAIN.base) {
-    PER_DOMAIN.base = getCertificateReportsGroupedPerDomain();
-  }
-  if (!PER_DOMAIN.links) {
-    PER_DOMAIN.links = getCertificateReportsGroupedPerDomain(true);
-  }
-  if (!PER_IP) {
-    PER_IP = getCertificateReportsGroupedPerIp();
-  }
-  if (!WORDCLOUD.base) {
-    WORDCLOUD.base = getCertificateReportsWordcloud({});
-  }
-  if (!WORDCLOUD.links) {
-    WORDCLOUD.links = getCertificateReportsWordcloud({ links: true });
-  }
-  if (!WORDCLOUD_WITH_DOMAINS.base) {
-    WORDCLOUD_WITH_DOMAINS.base = getCertificateReportsWordcloud({
-      domains: true,
-    });
-  }
-  if (!WORDCLOUD_WITH_DOMAINS.links) {
-    WORDCLOUD_WITH_DOMAINS.links = getCertificateReportsWordcloud({
-      domains: true,
-      links: true,
-    });
-  }
-}
-
 function setupChart(options) {
   if (!['domains', 'ips', 'wordcloud'].includes(options.mode)) {
     return;
@@ -313,8 +456,8 @@ function setupChart(options) {
     case 'wordcloud':
       const key = options.links ? 'links' : 'base';
       chart.data = options.domains
-        ? WORDCLOUD_WITH_DOMAINS[key]
-        : WORDCLOUD[key];
+        ? WORDCLOUD.domains[key]
+        : WORDCLOUD.base[key];
       break;
   }
 
