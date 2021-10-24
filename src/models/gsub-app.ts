@@ -202,7 +202,7 @@ export class GsubApp {
             const currentMultiplier = (value: number): number => {
               return certs.length === 10
                 ? 10 * value
-                : 9 * value + certs.length;
+                : 10 * (value - 1) + certs.length;
             };
             let color = resolvedIpAddress ? Color.FgYellow : Color.FgWhite;
             color = httpStatus === 200 ? Color.FgGreen : color;
