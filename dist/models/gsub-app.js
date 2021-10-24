@@ -208,16 +208,38 @@ class GsubApp {
   <main>
     <div id="chartdiv"></div>
     <nav>
-      <input type="radio" name="chartMode" id="domains" oninput="changeChartMode('domains')" />
-      <label class="radio-label" for="domains">Domains</label>
-      <input type="radio" name="chartMode" id="domains-with-links" oninput="changeChartMode('domainsWithLinks')" checked />
-      <label class="radio-label" for="domains-with-links">Domains with links</label>
-      <input type="radio" name="chartMode" id="ips" oninput="changeChartMode('ips')" />
-      <label class="radio-label" for="ips">Ips</label>
-      <label class="date-label" for="start">Last issuance date between</label>
-      <input type="date" id="start" name="start" oninput="filterChartDataOnDate(event)" />
-      <label class="date-label" for="end">and</label>
-      <input type="date" id="end" name="end" oninput="filterChartDataOnDate(event)" />
+      <ul>
+        <li>
+          <input type="radio" name="chartMode" id="domains" oninput="changeChartMode('domains')" checked />
+          <label class="radio-label" for="domains">Domains</label>
+        </li>
+        <li>
+          <input type="radio" name="chartMode" id="ips" oninput="changeChartMode('ips')" />
+          <label class="radio-label" for="ips">Ips</label>
+        </li>
+        <li>
+          <input type="radio" name="chartMode" id="wordcoud" oninput="changeChartMode('wordcloud')" />
+          <label class="radio-label" for="wordcoud">Wordcloud</label>
+        </li>
+      </ul>
+      <ul>
+        <li id="domains-choices" style="visibility: 'hidden';">
+          <input type="checkbox" name="domains-links" id="domains-links" oninput="changeChartOptions({ links: event.target.checked })" checked />
+          <label class="radio-label" for="domains-links">Links between domains</label>
+        </li>
+        <li id="wordcloud-choices" style="visibility: 'hidden';">
+          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="changeChartOptions({ links: event.target.checked })" checked />
+          <label class="radio-label" for="wordcloud-links">Links between words</label>
+          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="changeChartOptions({ domains: event.target.checked })" />
+          <label class="radio-label" for="wordcloud-domains">Show domains</label>
+        </li>
+        <li>
+          <label class="date-label" for="start">Last issuance date between</label>
+          <input type="date" id="start" name="start" oninput="filterChartDataOnDate(event)" />
+          <label class="date-label" for="end">and</label>
+          <input type="date" id="end" name="end" oninput="filterChartDataOnDate(event)" />
+        </li>
+      </ul>
       </nav>
   </main>
 </body>
@@ -234,23 +256,33 @@ class GsubApp {
                 })))}');
   var chartMode = 'domains';
 
-  function changeChartMode(mode) {
-    if(!['domains', 'domainsWithLinks', 'ips'].includes(mode)) return;
+  function changeChartMode(mode, options) {
+    if(!['domains', 'ips', 'wordcloud'].includes(mode)) return;
     chartMode = mode;
     switch(chartMode) {
       case 'domains':
-        setupChart({mode: 'domains'});
-        break;
-      case 'domainsWithLinks':
-        setupChart({mode: 'domains', link: true});
+        toggleChoicesVisibility('domains', 'list-item');
+        toggleChoicesVisibility('wordcloud', 'none');
+        setupChart({...(options ? options : { links: true }), mode: 'domains'});
         break;
       case 'ips':
-        setupChart({mode: 'ips'});
+        toggleChoicesVisibility('wordcloud', 'none');
+        toggleChoicesVisibility('domains', 'none');
+        setupChart({...(options ? options : {}), mode: 'ips'});
+        break;
+      case 'wordcloud':
+        toggleChoicesVisibility('wordcloud', 'list-item');
+        toggleChoicesVisibility('domains', 'none');
+        setupChart({...(options ? options : { links: true }), mode: 'wordcloud'});
         break;
     }
   }
 
-  changeChartMode('domainsWithLinks');
+  function changeChartOptions(options) {
+    changeChartMode(chartMode, options);
+  }
+
+  changeChartMode('domains');
 </script>
 </html>
 `);

@@ -57,7 +57,6 @@ main label.radio-label {
 }
 
 main label.date-label {
-  padding-right: 0;
   margin-left: 0.5rem;
   margin-right: 0.25rem;
 }
@@ -69,6 +68,17 @@ main label.date-label:first-of-type {
 main nav {
   padding: 1.75rem 1.5rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+}
+
+main nav > ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  list-style: none;
+  width: 100%;
+  padding: 1rem 0;
 }

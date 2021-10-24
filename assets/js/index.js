@@ -1,4 +1,4 @@
-function getCertificateReportsGroupedPerDomain(link = false) {
+function getCertificateReportsGroupedPerDomain(links = false) {
   const addedDomains = new Map();
   const data = [];
 
@@ -7,7 +7,7 @@ function getCertificateReportsGroupedPerDomain(link = false) {
     if (domainIndex === undefined) {
       const index =
         data.push({
-          id: `domain-${domain}`,
+          id: 'domain-' + domain,
           name: domain,
           value: 40,
           linkWith: [],
@@ -25,10 +25,10 @@ function getCertificateReportsGroupedPerDomain(link = false) {
     data[domainIndex].value = (data[domainIndex].value ?? 0) + 1;
     data[currentDomainIndex].value = (data[currentDomainIndex].value ?? 0) + 1;
     data[currentDomainIndex].children.push({
-      id: `cn-${certificateReport.commonName}`,
+      id: 'cn-' + certificateReport.commonName,
       name: certificateReport.commonName,
       value: 25,
-      linkWith: !link ? [] : [`domain-${certificateReport.queriedDomain}`],
+      linkWith: !links ? [] : ['domain-' + certificateReport.queriedDomain],
       httpStatus: certificateReport.httpStatus,
       resolvedIpAddress: certificateReport.resolvedIpAddress,
       lastIssuanceDate: certificateReport.date
@@ -49,7 +49,7 @@ function getCertificateReportsGroupedPerIp() {
     if (ipIndex === undefined) {
       const index =
         data.push({
-          id: `ip-${certificateReport.resolvedIpAddress}`,
+          id: 'ip-' + certificateReport.resolvedIpAddress,
           name: certificateReport.resolvedIpAddress,
           value: 40,
           linkWith: [],
@@ -60,7 +60,7 @@ function getCertificateReportsGroupedPerIp() {
     }
     data[ipIndex].value = (data[ipIndex].value ?? 0) + 1;
     data[ipIndex].children.push({
-      id: `cn-${certificateReport.commonName}`,
+      id: 'cn-' + certificateReport.commonName,
       name: certificateReport.commonName,
       value: 25,
       linkWith: [],
@@ -74,10 +74,81 @@ function getCertificateReportsGroupedPerIp() {
   return data;
 }
 
-let PER_DOMAIN = null;
-let PER_DOMAIN_WITH_LINKS = null;
+function getCertificateReportsWordcloud(options) {
+  const addedWords = new Map();
+  const data = [];
+
+  for (const certificateReport of baseChartData) {
+    const commonNameSplitted = [
+      ...new Set(certificateReport.commonName.split('.').slice(0, -2)),
+    ];
+    if (!commonNameSplitted.length) continue;
+    for (const word of commonNameSplitted) {
+      let wordIndex = addedWords.get(word);
+      if (wordIndex === undefined) {
+        const index =
+          data.push({
+            id: 'word-' + word,
+            name: word,
+            value: 20,
+            linkWith: [],
+            children: [],
+          }) - 1;
+        addedWords.set(word, index);
+        wordIndex = index;
+      }
+      data[wordIndex].value = (data[wordIndex].value ?? 0) + 1;
+      if (options.links) {
+        data[wordIndex].linkWith = [
+          ...new Set([
+            ...commonNameSplitted
+              .filter((w) => w !== word)
+              .map((w) => 'word-' + w),
+            ...data[wordIndex].linkWith,
+          ]),
+        ];
+      }
+      if (options.domains) {
+        data[wordIndex].children.push({
+          id: 'cn-' + certificateReport.commonName,
+          name: certificateReport.commonName,
+          value: 15,
+          linkWith: [],
+          httpStatus: certificateReport.httpStatus,
+          resolvedIpAddress: certificateReport.resolvedIpAddress,
+          lastIssuanceDate: certificateReport.date
+            ? new Date(certificateReport.date)
+            : null,
+        });
+      } else {
+        if (data[wordIndex].children.length === 1) {
+          data[wordIndex].children[0].count += 1;
+          data[wordIndex].children[0].name =
+            data[wordIndex].children[0].count.toString() + ' occurrences';
+          data[wordIndex].children[0].lastIssuanceDate.push(
+            certificateReport.lastIssuanceDate
+          );
+        } else {
+          data[wordIndex].children.push({
+            id: 'count-' + word,
+            name: '1 occurrences',
+            value: 15,
+            linkWith: [],
+            count: 1,
+            lastIssuanceDate: [certificateReport.lastIssuanceDate],
+          });
+        }
+      }
+    }
+  }
+  return data;
+}
+
+let PER_DOMAIN = { links: null, base: null };
 let PER_IP = null;
 let CHART_DATA_UNFILTERED = null;
+let WORDCLOUD = { links: null, base: null };
+let WORDCLOUD_WITH_DOMAINS = { links: null, base: null };
 
 let START_DATE = null;
 let END_DATE = null;
@@ -172,124 +243,178 @@ function getLastIssuanceDateString(lastIssuanceDate) {
   );
 }
 
-function setupChart(options) {
-  createChart();
-  if (!PER_DOMAIN) {
-    PER_DOMAIN = getCertificateReportsGroupedPerDomain();
+function setupChartDatas() {
+  if (!PER_DOMAIN.base) {
+    PER_DOMAIN.base = getCertificateReportsGroupedPerDomain();
   }
-  if (!PER_DOMAIN_WITH_LINKS) {
-    PER_DOMAIN_WITH_LINKS = getCertificateReportsGroupedPerDomain(true);
+  if (!PER_DOMAIN.links) {
+    PER_DOMAIN.links = getCertificateReportsGroupedPerDomain(true);
   }
   if (!PER_IP) {
     PER_IP = getCertificateReportsGroupedPerIp();
   }
-  const isDomainChart = options.mode === 'domains';
-  chart.data = isDomainChart
-    ? options.link
-      ? PER_DOMAIN_WITH_LINKS
-      : PER_DOMAIN
-    : PER_IP;
-  CHART_DATA_UNFILTERED = chart.data;
-  setChartDataWithFilters();
+  if (!WORDCLOUD.base) {
+    WORDCLOUD.base = getCertificateReportsWordcloud({});
+  }
+  if (!WORDCLOUD.links) {
+    WORDCLOUD.links = getCertificateReportsWordcloud({ links: true });
+  }
+  if (!WORDCLOUD_WITH_DOMAINS.base) {
+    WORDCLOUD_WITH_DOMAINS.base = getCertificateReportsWordcloud({
+      domains: true,
+    });
+  }
+  if (!WORDCLOUD_WITH_DOMAINS.links) {
+    WORDCLOUD_WITH_DOMAINS.links = getCertificateReportsWordcloud({
+      domains: true,
+      links: true,
+    });
+  }
+}
 
-  nodeTemplate.adapter.add('tooltipText', function (text, target, key) {
+function setupChart(options) {
+  if (!['domains', 'ips', 'wordcloud'].includes(options.mode)) {
+    return;
+  }
+  createChart();
+  setupChartDatas();
+
+  const isDomainChart = options.mode === 'domains';
+  const isIpsChart = options.mode === 'ips';
+
+  const tooltipGetter = (mode, target) => {
     if (target.dataItem.dataContext.lastIssuanceDate) {
+      if (Array.isArray(target.dataItem.dataContext.lastIssuanceDate)) {
+        return '{name}';
+      }
       return getTooltipTemplateForCommonName(
         target.dataItem.dataContext,
         isDomainChart
       );
     } else {
+      if (mode === 'wordcloud') {
+        return (
+          '[bold]Word:[/] {name}\n[bold]Occurrences:[/] ' +
+          (options.domains
+            ? target.dataItem.dataContext.children.length
+            : target.dataItem.dataContext.children[0].count)
+        );
+      }
       return isDomainChart ? '[bold]Domain:[/] {name}' : '[bold]IP:[/] {name}';
     }
+  };
+  switch (options.mode) {
+    case 'domains':
+      chart.data = options.links ? PER_DOMAIN.links : PER_DOMAIN.base;
+      break;
+    case 'ips':
+      chart.data = PER_IP;
+      break;
+    case 'wordcloud':
+      const key = options.links ? 'links' : 'base';
+      chart.data = options.domains
+        ? WORDCLOUD_WITH_DOMAINS[key]
+        : WORDCLOUD[key];
+      break;
+  }
+
+  CHART_DATA_UNFILTERED = chart.data;
+  setChartDataWithFilters();
+
+  nodeTemplate.adapter.add('tooltipText', function (text, target, key) {
+    return tooltipGetter(options.mode, target);
   });
 
-  nodeTemplate.circle.events.on('ready', function (event) {
-    if (event.target.parent.children.length > 3) return;
-    const dataContext = event.target.parent.dataItem.dataContext;
-    if (
-      !dataContext.resolvedIpAddress ||
-      (!isDomainChart && !dataContext.httpStatus)
-    )
-      return;
-
-    let radius = event.target.pixelRadius;
-    const ds = event.target.defaultState;
-    const dsRadius = ds.properties.radius;
-    if (typeof dsRadius === 'number') {
-      radius = dsRadius;
-    }
-    const baseSize = 2 * radius;
-
-    const height = Math.max(Math.min(baseSize * 0.15, 20), 15);
-    const width = Math.min(
-      Math.round(baseSize * 0.99),
-      isDomainChart ? 100 : 30
-    );
-
-    const httpStatusElem = event.target.parent.createChild(
-      am4core.RoundedRectangle
-    );
-    httpStatusElem.dummyData = 'extra-rectangle';
-    httpStatusElem.fill =
-      dataContext.httpStatus === 200 ? '#9ACD32' : '#DCDCDC';
-    httpStatusElem.horizontalCenter = 'middle';
-    httpStatusElem.verticalCenter = 'middle';
-    httpStatusElem.y = baseSize / 2;
-    httpStatusElem.x = am4core.percent(50);
-    httpStatusElem.height = height;
-    httpStatusElem.width = width;
-
-    const label = event.target.parent.createChild(am4core.Label);
-    label.dummyData = 'extra-label';
-    label.shouldClone = false;
-    label.horizontalCenter = 'middle';
-    label.verticalCenter = 'middle';
-    label.strokeOpacity = 0;
-    label.interactionsEnabled = false;
-    label.textAlign = 'middle';
-    label.textValign = 'middle';
-    label.nonScaling = true;
-    label.y = baseSize / 2;
-    label.x = am4core.percent(50);
-    label.height = height;
-    label.width = width;
-    if (isDomainChart) {
-      label.text = '';
-
-      if (dataContext.resolvedIpAddress) {
-        label.text += dataContext.resolvedIpAddress + ' ';
+  if (options.mode !== 'wordcloud') {
+    nodeTemplate.circle.events.on('ready', function (event) {
+      if (event.target.parent.children.length > 3) return;
+      const dataContext = event.target.parent.dataItem.dataContext;
+      if (
+        (isDomainChart && !dataContext.resolvedIpAddress) ||
+        (isIpsChart && !dataContext.httpStatus)
+      ) {
+        return;
       }
-      if (dataContext.httpStatus) {
-        label.text += '(' + dataContext.httpStatus + ')';
+
+      let radius = event.target.pixelRadius;
+      const ds = event.target.defaultState;
+      const dsRadius = ds.properties.radius;
+      if (typeof dsRadius === 'number') {
+        radius = dsRadius;
       }
-    } else {
-      label.text = dataContext.httpStatus;
-    }
-    label.fontWeight = 'bold';
-    label.fontSize = resolvedIpAddressLabelSize;
+      const baseSize = 2 * radius;
 
-    label.hideOversized = true;
-    label.truncate = true;
-  });
+      const height = Math.max(Math.min(baseSize * 0.15, 20), 15);
+      const width = Math.min(
+        Math.round(baseSize * 0.99),
+        isDomainChart ? 100 : 30
+      );
 
-  nodeTemplate.events.on('sizechanged', function (ev) {
-    const label = ev.target.children.values.find(
-      (c) => c.dummyData === 'extra-label'
-    );
-    const rect = ev.target.children.values.find(
-      (c) => c.dummyData === 'extra-rectangle'
-    );
-    if (!label) return;
+      const httpStatusElem = event.target.parent.createChild(
+        am4core.RoundedRectangle
+      );
+      httpStatusElem.dummyData = 'extra-rectangle';
+      httpStatusElem.fill =
+        dataContext.httpStatus === 200 ? '#9ACD32' : '#DCDCDC';
+      httpStatusElem.horizontalCenter = 'middle';
+      httpStatusElem.verticalCenter = 'middle';
+      httpStatusElem.y = baseSize / 2;
+      httpStatusElem.x = am4core.percent(50);
+      httpStatusElem.height = height;
+      httpStatusElem.width = width;
 
-    let scale = 1;
+      const label = event.target.parent.createChild(am4core.Label);
+      label.dummyData = 'extra-label';
+      label.shouldClone = false;
+      label.horizontalCenter = 'middle';
+      label.verticalCenter = 'middle';
+      label.strokeOpacity = 0;
+      label.interactionsEnabled = false;
+      label.textAlign = 'middle';
+      label.textValign = 'middle';
+      label.nonScaling = true;
+      label.y = baseSize / 2;
+      label.x = am4core.percent(50);
+      label.height = height;
+      label.width = width;
+      if (isDomainChart) {
+        label.text = '';
 
-    if (ev.target.parent && ev.target.parent.parent) {
-      scale = ev.target.parent.parent.scale;
-    }
+        if (dataContext.resolvedIpAddress) {
+          label.text += dataContext.resolvedIpAddress + ' ';
+        }
+        if (dataContext.httpStatus) {
+          label.text += '(' + dataContext.httpStatus + ')';
+        }
+      } else {
+        label.text = dataContext.httpStatus;
+      }
+      label.fontWeight = 'bold';
+      label.fontSize = resolvedIpAddressLabelSize;
 
-    label.width = rect.pixelWidth * scale;
-    label.height = rect.pixelHeight * scale;
-  });
+      label.hideOversized = true;
+      label.truncate = true;
+    });
+
+    nodeTemplate.events.on('sizechanged', function (ev) {
+      const label = ev.target.children.values.find(
+        (c) => c.dummyData === 'extra-label'
+      );
+      const rect = ev.target.children.values.find(
+        (c) => c.dummyData === 'extra-rectangle'
+      );
+      if (!label) return;
+
+      let scale = 1;
+
+      if (ev.target.parent && ev.target.parent.parent) {
+        scale = ev.target.parent.parent.scale;
+      }
+
+      label.width = rect.pixelWidth * scale;
+      label.height = rect.pixelHeight * scale;
+    });
+  }
 }
 
 function filterChartDataOnDate(event) {
@@ -316,11 +441,34 @@ function setChartDataWithFilters() {
   chart.data = CHART_DATA_UNFILTERED.map((item) => ({
     ...item,
     children: item.children.filter((subitem) => {
-      return (
-        subitem.lastIssuanceDate &&
-        (!START_DATE || START_DATE <= subitem.lastIssuanceDate) &&
-        (!END_DATE || END_DATE >= subitem.lastIssuanceDate)
-      );
+      if (!START_DATE && !END_DATE) return true;
+
+      if (typeof subitem.lastIssuanceDate === 'string') {
+        return (
+          (!START_DATE || START_DATE <= subitem.lastIssuanceDate) &&
+          (!END_DATE || END_DATE >= subitem.lastIssuanceDate)
+        );
+      }
+
+      if (Array.isArray(subitem.lastIssuanceDate)) {
+        for (const issuanceDate of subitem.lastIssuanceDate) {
+          if (
+            (!START_DATE || START_DATE <= issuanceDate) &&
+            (!END_DATE || END_DATE >= issuanceDate)
+          ) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     }),
   })).filter((item) => !!item.children.length);
+}
+
+function toggleChoicesVisibility(prefix, force) {
+  const el = document.getElementById(prefix + '-choices');
+  if (!el) return;
+  el.style.display =
+    force || (el.style.display === 'list-item' ? 'none' : 'list-item');
 }
