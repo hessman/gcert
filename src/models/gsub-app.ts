@@ -153,6 +153,9 @@ export class GsubApp {
         });
         const { certs, footer } = parseGoogleResponse(response);
         const pageCount = +footer[4];
+        if (!nextPage) {
+          log(`Start processing ${pageCount * 10} reports for ${target}`, Color.FgCyan);
+        }
         const currentPage = +footer[3];
         for (let i = 0; i < certs.length; i++) {
           const cert = certs[i];
@@ -174,7 +177,7 @@ export class GsubApp {
             let color = resolvedIpAddress ? Color.FgYellow : Color.FgWhite;
             color = httpStatus === 200 ? Color.FgGreen : color;
             log(
-              `current ${target} - ${
+              `${target} - ${
                 i + 1 + currentMultiplier(currentPage - 1)
               }/${currentMultiplier(pageCount)} - ${commonName} - ${
                 resolvedIpAddress ? resolvedIpAddress : "not resolved"
@@ -224,7 +227,7 @@ export class GsubApp {
             header: "Common name",
           },
           {
-            key: "date",
+            key: "lastIssuanceDate",
             header: "Last certificate issuance date",
           },
           {

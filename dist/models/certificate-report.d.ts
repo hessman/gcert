@@ -4,7 +4,7 @@ export declare class CertificateReport {
     domain: string;
     commonName: string;
     queriedDomain: string;
-    date: Date;
+    lastIssuanceDate: Date;
     httpStatus: number | null;
     resolvedIpAddress: string | null;
     constructor(data: any, app: GsubApp, queriedDomain: string);

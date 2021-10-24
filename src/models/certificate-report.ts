@@ -9,7 +9,7 @@ export class CertificateReport {
   public domain: string;
   public commonName: string;
   public queriedDomain: string;
-  public date: Date;
+  public lastIssuanceDate: Date;
   public httpStatus: number | null = null;
   public resolvedIpAddress: string | null = null;
 
@@ -25,19 +25,21 @@ export class CertificateReport {
       throw new Error("Common name with whitespace");
     }
     if (CertificateReport.commonNames.has(commonName)) {
-      // update already found report timestamp
+      // update already found report last issuance date
       const certificateReport = app.certificateReports.find(
         (c) => c.commonName === commonName
       );
-      if (certificateReport && certificateReport.date < timestamp) {
-        certificateReport.date = new Date(timestamp);
+      if (certificateReport && certificateReport.lastIssuanceDate < timestamp) {
+        certificateReport.lastIssuanceDate = new Date(timestamp);
       }
-
       throw new Error("Common name already done");
     }
     CertificateReport.commonNames.add(commonName);
     const splittedCN = commonName.split(".");
     const domain = splittedCN.slice(-2).join(".");
+    if (app.options.denyList.includes(domain)) {
+      throw new Error("Domain on deny list");
+    }
     if (
       !app.todoDomains.includes(domain) &&
       !app.doneDomains.includes(domain) &&
@@ -49,12 +51,12 @@ export class CertificateReport {
     this.commonName = commonName;
     this.queriedDomain = queriedDomain;
     this.domain = domain;
-    this.date = new Date(timestamp);
+    this.lastIssuanceDate = new Date(timestamp);
   }
 
   async getHttpStatus(): Promise<number | undefined> {
     try {
-      if (this.commonName.includes("*")) return
+      if (this.commonName.includes("*")) return;
       const response = await axios.get("http://" + this.commonName);
       this.httpStatus = response.status;
       return this.httpStatus;
@@ -62,7 +64,7 @@ export class CertificateReport {
   }
   async resolve(): Promise<string | undefined> {
     try {
-      if (this.commonName.includes("*")) return
+      if (this.commonName.includes("*")) return;
       const response = await dns.lookup(this.commonName);
       this.resolvedIpAddress = response.address;
       return this.resolvedIpAddress;

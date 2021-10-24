@@ -18,16 +18,19 @@ class CertificateReport {
             throw new Error("Common name with whitespace");
         }
         if (CertificateReport.commonNames.has(commonName)) {
-            // update already found report timestamp
+            // update already found report last issuance date
             const certificateReport = app.certificateReports.find((c) => c.commonName === commonName);
-            if (certificateReport && certificateReport.date < timestamp) {
-                certificateReport.date = new Date(timestamp);
+            if (certificateReport && certificateReport.lastIssuanceDate < timestamp) {
+                certificateReport.lastIssuanceDate = new Date(timestamp);
             }
             throw new Error("Common name already done");
         }
         CertificateReport.commonNames.add(commonName);
         const splittedCN = commonName.split(".");
         const domain = splittedCN.slice(-2).join(".");
+        if (app.options.denyList.includes(domain)) {
+            throw new Error("Domain on deny list");
+        }
         if (!app.todoDomains.includes(domain) &&
             !app.doneDomains.includes(domain) &&
             !app.options.denyList.includes(domain)) {
@@ -37,7 +40,7 @@ class CertificateReport {
         this.commonName = commonName;
         this.queriedDomain = queriedDomain;
         this.domain = domain;
-        this.date = new Date(timestamp);
+        this.lastIssuanceDate = new Date(timestamp);
     }
     async getHttpStatus() {
         try {

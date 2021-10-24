@@ -93,6 +93,9 @@ class GsubApp {
                 });
                 const { certs, footer } = parseGoogleResponse(response);
                 const pageCount = +footer[4];
+                if (!nextPage) {
+                    (0, utils_1.log)(`Start processing ${pageCount * 10} reports for ${target}`, utils_1.Color.FgCyan);
+                }
                 const currentPage = +footer[3];
                 for (let i = 0; i < certs.length; i++) {
                     const cert = certs[i];
@@ -113,7 +116,7 @@ class GsubApp {
                         };
                         let color = resolvedIpAddress ? utils_1.Color.FgYellow : utils_1.Color.FgWhite;
                         color = httpStatus === 200 ? utils_1.Color.FgGreen : color;
-                        (0, utils_1.log)(`current ${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
+                        (0, utils_1.log)(`${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
                         this.certificateReports.push(certificateReport);
                     }
                     catch (err) {
@@ -154,7 +157,7 @@ class GsubApp {
                         header: "Common name",
                     },
                     {
-                        key: "date",
+                        key: "lastIssuanceDate",
                         header: "Last certificate issuance date",
                     },
                     {
