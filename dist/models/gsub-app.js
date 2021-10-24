@@ -144,8 +144,8 @@ class GsubApp {
                 if (this.doneDomains.has(domain))
                     continue;
                 ops.push(this.getCertificateRecords(domain, depthLevel + 1));
-                this.todoDomains.delete(domain);
                 this.doneDomains.add(domain);
+                this.todoDomains.delete(domain);
             }
             await Promise.all(ops);
         }
@@ -226,26 +226,26 @@ class GsubApp {
       </ul>
       <ul>
         <li id="domains-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="domains-links" id="domains-links" oninput="changeChartOptions({ links: event.target.checked })" checked />
+          <input type="checkbox" name="domains-links" id="domains-links" oninput="filterChartDataOn(event)" checked />
           <label class="radio-label" for="domains-links">Links between domains</label>
         </li>
         <li id="wordcloud-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="changeChartOptions({
-            links: event.target.checked,
-            domains: document.getElementById('wordcloud-domains').checked,
-          })" checked />
+          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="filterChartDataOn(event)" checked />
           <label class="radio-label" for="wordcloud-links">Links between words</label>
-          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="changeChartOptions({
-            links: document.getElementById('wordcloud-links').checked,
-            domains: event.target.checked,
-          })" />
+          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="filterChartDataOn(event)" />
           <label class="radio-label" for="wordcloud-domains">Show domains</label>
+          <input type="checkbox" name="wordcloud-only-words" id="wordcloud-only-words" oninput="changeChartOptions({ onlyWords: event.target.checked })" checked />
+          <label class="radio-label" for="wordcloud-only-words">Words only</label>
+        </li>
+        <li id="global-choices" style="visibility: 'hidden';">
+          <input type="checkbox" name="global-only-resolved" id="global-only-resolved" oninput="filterChartDataOn(event)" />
+          <label class="radio-label" for="global-only-resolved">Only resolved</label>
         </li>
         <li>
           <label class="date-label" for="start">Last issuance date between</label>
-          <input type="date" id="start" name="start" oninput="filterChartDataOnDate(event)" />
+          <input type="date" id="start" name="start" oninput="filterChartDataOn(event)" />
           <label class="date-label" for="end">and</label>
-          <input type="date" id="end" name="end" oninput="filterChartDataOnDate(event)" />
+          <input type="date" id="end" name="end" oninput="filterChartDataOn(event)" />
         </li>
       </ul>
       </nav>
@@ -263,31 +263,42 @@ class GsubApp {
                     date: item.lastIssuanceDate ? item.lastIssuanceDate.toISOString() : null,
                 })))}');
   var chartMode = 'domains';
+  var chartOptions = null;
 
-  function changeChartMode(mode, options) {
+  function changeChartMode(mode) {
     if(!['domains', 'ips', 'wordcloud'].includes(mode)) return;
     chartMode = mode;
+    if(mode !== chartMode) {
+      chartOptions = null;
+      if(mode === 'wordcloud') {
+        filterChartDataOn({ target: { checked: true, id: 'wordcloud-links' } });
+      }
+    }
     switch(chartMode) {
       case 'domains':
+        chartOptions = chartOptions ? chartOptions : {};
         toggleChoicesVisibility('domains', 'list-item');
         toggleChoicesVisibility('wordcloud', 'none');
-        setupChart({...(options ? options : { links: true }), mode: 'domains'});
+        setupChart({...chartOptions, mode: 'domains'});
         break;
       case 'ips':
+        chartOptions = chartOptions ? chartOptions : {};
         toggleChoicesVisibility('wordcloud', 'none');
         toggleChoicesVisibility('domains', 'none');
-        setupChart({...(options ? options : {}), mode: 'ips'});
+        setupChart({...chartOptions, mode: 'ips'});
         break;
       case 'wordcloud':
+        chartOptions = chartOptions ? chartOptions : { onlyWords: true };
         toggleChoicesVisibility('wordcloud', 'list-item');
         toggleChoicesVisibility('domains', 'none');
-        setupChart({...(options ? options : { links: true }), mode: 'wordcloud'});
+        setupChart({...chartOptions, mode: 'wordcloud'});
         break;
     }
   }
 
   function changeChartOptions(options) {
-    changeChartMode(chartMode, options);
+    chartOptions = { ...(chartOptions ? chartOptions : {}), ...options };
+    changeChartMode(chartMode);
   }
 
   changeChartMode('domains');
