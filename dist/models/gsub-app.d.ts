@@ -1,4 +1,4 @@
-import { CertificateReport } from './certificate-report';
+import { CertificateReport } from "./certificate-report";
 export interface GsubOptions {
     maxDepthLevel: number;
     outputFormat: OutputFormat;
@@ -19,8 +19,8 @@ export declare class GsubApp {
     static readonly DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
     static readonly GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
     certificateReports: CertificateReport[];
-    todoDomains: string[];
-    doneDomains: string[];
+    todoDomains: Set<string>;
+    doneDomains: Set<string>;
     options: GsubOptions;
     constructor();
     getCertificateRecords(target?: string, depthLevel?: number): Promise<void>;

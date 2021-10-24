@@ -8,7 +8,7 @@ function getCertificateReportsGroupedPerIp() {
     if (ipIndex === undefined) {
       const index =
         data.push({
-          id: 'ip-' + certificateReport.resolvedIpAddress,
+          id: "ip-" + certificateReport.resolvedIpAddress,
           name: certificateReport.resolvedIpAddress,
           value: 40,
           linkWith: [],
@@ -19,7 +19,7 @@ function getCertificateReportsGroupedPerIp() {
     }
     data[ipIndex].value = (data[ipIndex].value ?? 0) + 1;
     data[ipIndex].children.push({
-      id: 'cn-' + certificateReport.commonName,
+      id: "cn-" + certificateReport.commonName,
       name: certificateReport.commonName,
       value: 25,
       linkWith: [],
@@ -39,7 +39,7 @@ function getCertificateReportsWordcloud(options) {
 
   for (const certificateReport of baseChartData) {
     const commonNameSplitted = [
-      ...new Set(certificateReport.commonName.split('.').slice(0, -2)),
+      ...new Set(certificateReport.commonName.split(".").slice(0, -2)),
     ];
     if (!commonNameSplitted.length) continue;
     for (const word of commonNameSplitted) {
@@ -47,7 +47,7 @@ function getCertificateReportsWordcloud(options) {
       if (wordIndex === undefined) {
         const index =
           data.push({
-            id: 'word-' + word,
+            id: "word-" + word,
             name: word,
             value: 20,
             linkWith: [],
@@ -62,14 +62,14 @@ function getCertificateReportsWordcloud(options) {
           ...new Set([
             ...commonNameSplitted
               .filter((w) => w !== word)
-              .map((w) => 'word-' + w),
+              .map((w) => "word-" + w),
             ...data[wordIndex].linkWith,
           ]),
         ];
       }
       if (options.domains) {
         data[wordIndex].children.push({
-          id: 'cn-' + certificateReport.commonName,
+          id: "cn-" + certificateReport.commonName,
           name: certificateReport.commonName,
           value: 15,
           linkWith: [],
@@ -83,14 +83,14 @@ function getCertificateReportsWordcloud(options) {
         if (data[wordIndex].children.length === 1) {
           data[wordIndex].children[0].count += 1;
           data[wordIndex].children[0].name =
-            data[wordIndex].children[0].count.toString() + ' occurrences';
+            data[wordIndex].children[0].count.toString() + " occurrences";
           data[wordIndex].children[0].lastIssuanceDate.push(
             certificateReport.lastIssuanceDate
           );
         } else {
           data[wordIndex].children.push({
-            id: 'count-' + word,
-            name: '1 occurrences',
+            id: "count-" + word,
+            name: "1 occurrences",
             value: 15,
             linkWith: [],
             count: 1,
@@ -129,7 +129,7 @@ function setupChartDatas() {
     let domainIndex = addedDomains.get(domain);
     if (domainIndex === undefined) {
       const payload = {
-        id: 'domain-' + domain,
+        id: "domain-" + domain,
         name: domain,
         value: 40,
       };
@@ -153,7 +153,7 @@ function setupChartDatas() {
     perDomainData.base[currentDomainIndex].value = curentDomainNewValue;
     perDomainData.links[currentDomainIndex].value = curentDomainNewValue;
     const commonNamePayload = {
-      id: 'cn-' + certificateReport.commonName,
+      id: "cn-" + certificateReport.commonName,
       name: certificateReport.commonName,
       value: 25,
       linkWith: [],
@@ -166,7 +166,7 @@ function setupChartDatas() {
     perDomainData.base[currentDomainIndex].children.push(commonNamePayload);
     perDomainData.links[currentDomainIndex].children.push({
       ...commonNamePayload,
-      linkWith: ['domain-' + certificateReport.queriedDomain],
+      linkWith: ["domain-" + certificateReport.queriedDomain],
     });
 
     if (certificateReport.resolvedIpAddress) {
@@ -174,7 +174,7 @@ function setupChartDatas() {
       if (ipIndex === undefined) {
         const index =
           perIpData.push({
-            id: 'ip-' + certificateReport.resolvedIpAddress,
+            id: "ip-" + certificateReport.resolvedIpAddress,
             name: certificateReport.resolvedIpAddress,
             value: 40,
             linkWith: [],
@@ -185,7 +185,7 @@ function setupChartDatas() {
       }
       perIpData[ipIndex].value = (perIpData[ipIndex].value ?? 0) + 1;
       perIpData[ipIndex].children.push({
-        id: 'cn-' + certificateReport.commonName,
+        id: "cn-" + certificateReport.commonName,
         name: certificateReport.commonName,
         value: 25,
         linkWith: [],
@@ -198,14 +198,14 @@ function setupChartDatas() {
     }
 
     const commonNameSplitted = [
-      ...new Set(certificateReport.commonName.split('.').slice(0, -2)),
+      ...new Set(certificateReport.commonName.split(".").slice(0, -2)),
     ];
     if (!!commonNameSplitted.length) {
       for (const word of commonNameSplitted) {
         let wordIndex = addedWords.get(word);
         if (wordIndex === undefined) {
           const payload = {
-            id: 'word-' + word,
+            id: "word-" + word,
             name: word,
             value: 20,
           };
@@ -242,14 +242,14 @@ function setupChartDatas() {
           ...new Set([
             ...commonNameSplitted
               .filter((w) => w !== word)
-              .map((w) => 'word-' + w),
+              .map((w) => "word-" + w),
             ...wordcloudData.base.links[wordIndex].linkWith,
           ]),
         ];
         wordcloudData.base.links[wordIndex].linkWith = wordLinks;
         wordcloudData.domains.links[wordIndex].linkWith = wordLinks;
         const wordcloudCommonNamePayload = {
-          id: 'cn-' + certificateReport.commonName,
+          id: "cn-" + certificateReport.commonName,
           name: certificateReport.commonName,
           value: 15,
           httpStatus: certificateReport.httpStatus,
@@ -270,7 +270,7 @@ function setupChartDatas() {
           wordcloudData.base.base[wordIndex].children[0].count += 1;
           wordcloudData.base.base[wordIndex].children[0].name =
             wordcloudData.base.base[wordIndex].children[0].count.toString() +
-            ' occurrences';
+            " occurrences";
           wordcloudData.base.links[wordIndex].children[0].count =
             wordcloudData.base.base[wordIndex].children[0].count;
           wordcloudData.base.links[wordIndex].children[0].name =
@@ -283,8 +283,8 @@ function setupChartDatas() {
           );
         } else {
           const occurrencesPayload = {
-            id: 'count-' + word,
-            name: '1 occurrences',
+            id: "count-" + word,
+            name: "1 occurrences",
             value: 15,
             count: 1,
           };
@@ -339,7 +339,7 @@ function createChart() {
     chart.dispose();
   }
   chart = am4core.create(
-    'chartdiv',
+    "chartdiv",
     am4plugins_forceDirected.ForceDirectedTree
   );
   chart.zoomable = true;
@@ -347,29 +347,29 @@ function createChart() {
     new am4plugins_forceDirected.ForceDirectedSeries()
   );
 
-  networkSeries.dataFields.linkWith = 'linkWith';
-  networkSeries.dataFields.name = 'name';
-  networkSeries.dataFields.id = 'id';
-  networkSeries.dataFields.value = 'value';
-  networkSeries.dataFields.children = 'children';
+  networkSeries.dataFields.linkWith = "linkWith";
+  networkSeries.dataFields.name = "name";
+  networkSeries.dataFields.id = "id";
+  networkSeries.dataFields.value = "value";
+  networkSeries.dataFields.children = "children";
 
-  networkSeries.nodes.template.label.text = '{name}';
+  networkSeries.nodes.template.label.text = "{name}";
 
   nodeTemplate = networkSeries.nodes.template;
-  nodeTemplate.tooltipText = '{name}';
+  nodeTemplate.tooltipText = "{name}";
   nodeTemplate.fillOpacity = 1;
 
   const linkTemplate = networkSeries.links.template;
-  linkTemplate.states.create('hover');
+  linkTemplate.states.create("hover");
 
-  nodeTemplate.events.on('over', function (event) {
+  nodeTemplate.events.on("over", function (event) {
     const dataItem = event.target.dataItem;
     dataItem.childLinks.each(function (link) {
       link.isHover = true;
     });
   });
 
-  nodeTemplate.events.on('out', function (event) {
+  nodeTemplate.events.on("out", function (event) {
     const dataItem = event.target.dataItem;
     dataItem.childLinks.each(function (link) {
       link.isHover = false;
@@ -382,79 +382,79 @@ function createChart() {
 }
 
 function getTooltipTemplateForCommonName(item, withIp = false) {
-  const txt = ['[bold]CN:[/] {name}'];
+  const txt = ["[bold]CN:[/] {name}"];
   if (item.lastIssuanceDate) {
     txt.push(
-      '[bold]Last issuance date:[/] ' +
+      "[bold]Last issuance date:[/] " +
         getLastIssuanceDateString(item.lastIssuanceDate)
     );
   }
   if (withIp && item.resolvedIpAddress) {
-    txt.push('[bold]IP:[/] ' + item.resolvedIpAddress);
+    txt.push("[bold]IP:[/] " + item.resolvedIpAddress);
   }
   if (item.httpStatus) {
-    txt.push('[bold]HTTP status:[/] ' + item.httpStatus);
+    txt.push("[bold]HTTP status:[/] " + item.httpStatus);
   }
-  return txt.join('\n');
+  return txt.join("\n");
 }
 
 function getLastIssuanceDateString(lastIssuanceDate) {
   return (
-    (lastIssuanceDate.getMonth() + 1).toString().padStart(2, '0') +
-    '/' +
-    lastIssuanceDate.getDate().toString().padStart(2, '0') +
-    '/' +
+    (lastIssuanceDate.getMonth() + 1).toString().padStart(2, "0") +
+    "/" +
+    lastIssuanceDate.getDate().toString().padStart(2, "0") +
+    "/" +
     lastIssuanceDate.getFullYear() +
-    ' ' +
-    lastIssuanceDate.getHours().toString().padStart(2, '0') +
-    ':' +
-    lastIssuanceDate.getMinutes().toString().padStart(2, '0') +
-    ':' +
-    lastIssuanceDate.getSeconds().toString().padStart(2, '0') +
-    ' UTC'
+    " " +
+    lastIssuanceDate.getHours().toString().padStart(2, "0") +
+    ":" +
+    lastIssuanceDate.getMinutes().toString().padStart(2, "0") +
+    ":" +
+    lastIssuanceDate.getSeconds().toString().padStart(2, "0") +
+    " UTC"
   );
 }
 
 function setupChart(options) {
-  if (!['domains', 'ips', 'wordcloud'].includes(options.mode)) {
+  if (!["domains", "ips", "wordcloud"].includes(options.mode)) {
     return;
   }
   createChart();
   setupChartDatas();
 
-  const isDomainChart = options.mode === 'domains';
-  const isIpsChart = options.mode === 'ips';
+  const isDomainChart = options.mode === "domains";
+  const isIpsChart = options.mode === "ips";
 
   const tooltipGetter = (mode, target) => {
     if (target.dataItem.dataContext.lastIssuanceDate) {
       if (Array.isArray(target.dataItem.dataContext.lastIssuanceDate)) {
-        return '{name}';
+        return "{name}";
       }
       return getTooltipTemplateForCommonName(
         target.dataItem.dataContext,
         isDomainChart
       );
     } else {
-      if (mode === 'wordcloud') {
+      if (mode === "wordcloud") {
         return (
-          '[bold]Word:[/] {name}\n[bold]Occurrences:[/] ' +
+          "[bold]Word:[/] {name}\n[bold]Occurrences:[/] " +
           (options.domains
             ? target.dataItem.dataContext.children.length
             : target.dataItem.dataContext.children[0].count)
         );
       }
-      return isDomainChart ? '[bold]Domain:[/] {name}' : '[bold]IP:[/] {name}';
+      return isDomainChart ? "[bold]Domain:[/] {name}" : "[bold]IP:[/] {name}";
     }
   };
   switch (options.mode) {
-    case 'domains':
+    case "domains":
       chart.data = options.links ? PER_DOMAIN.links : PER_DOMAIN.base;
       break;
-    case 'ips':
+    case "ips":
       chart.data = PER_IP;
       break;
-    case 'wordcloud':
-      const key = options.links ? 'links' : 'base';
+    case "wordcloud":
+      const key = options.links ? "links" : "base";
       chart.data = options.domains
         ? WORDCLOUD.domains[key]
         : WORDCLOUD.base[key];
@@ -464,12 +464,12 @@ function setupChart(options) {
   CHART_DATA_UNFILTERED = chart.data;
   setChartDataWithFilters();
 
-  nodeTemplate.adapter.add('tooltipText', function (text, target, key) {
+  nodeTemplate.adapter.add("tooltipText", function (text, target, key) {
     return tooltipGetter(options.mode, target);
   });
 
-  if (options.mode !== 'wordcloud') {
-    nodeTemplate.circle.events.on('ready', function (event) {
+  if (options.mode !== "wordcloud") {
+    nodeTemplate.circle.events.on("ready", function (event) {
       if (event.target.parent.children.length > 3) return;
       const dataContext = event.target.parent.dataItem.dataContext;
       if (
@@ -482,7 +482,7 @@ function setupChart(options) {
       let radius = event.target.pixelRadius;
       const ds = event.target.defaultState;
       const dsRadius = ds.properties.radius;
-      if (typeof dsRadius === 'number') {
+      if (typeof dsRadius === "number") {
         radius = dsRadius;
       }
       const baseSize = 2 * radius;
@@ -496,55 +496,55 @@ function setupChart(options) {
       const httpStatusElem = event.target.parent.createChild(
         am4core.RoundedRectangle
       );
-      httpStatusElem.dummyData = 'extra-rectangle';
+      httpStatusElem.dummyData = "extra-rectangle";
       httpStatusElem.fill =
-        dataContext.httpStatus === 200 ? '#9ACD32' : '#DCDCDC';
-      httpStatusElem.horizontalCenter = 'middle';
-      httpStatusElem.verticalCenter = 'middle';
+        dataContext.httpStatus === 200 ? "#9ACD32" : "#DCDCDC";
+      httpStatusElem.horizontalCenter = "middle";
+      httpStatusElem.verticalCenter = "middle";
       httpStatusElem.y = baseSize / 2;
       httpStatusElem.x = am4core.percent(50);
       httpStatusElem.height = height;
       httpStatusElem.width = width;
 
       const label = event.target.parent.createChild(am4core.Label);
-      label.dummyData = 'extra-label';
+      label.dummyData = "extra-label";
       label.shouldClone = false;
-      label.horizontalCenter = 'middle';
-      label.verticalCenter = 'middle';
+      label.horizontalCenter = "middle";
+      label.verticalCenter = "middle";
       label.strokeOpacity = 0;
       label.interactionsEnabled = false;
-      label.textAlign = 'middle';
-      label.textValign = 'middle';
+      label.textAlign = "middle";
+      label.textValign = "middle";
       label.nonScaling = true;
       label.y = baseSize / 2;
       label.x = am4core.percent(50);
       label.height = height;
       label.width = width;
       if (isDomainChart) {
-        label.text = '';
+        label.text = "";
 
         if (dataContext.resolvedIpAddress) {
-          label.text += dataContext.resolvedIpAddress + ' ';
+          label.text += dataContext.resolvedIpAddress + " ";
         }
         if (dataContext.httpStatus) {
-          label.text += '(' + dataContext.httpStatus + ')';
+          label.text += "(" + dataContext.httpStatus + ")";
         }
       } else {
         label.text = dataContext.httpStatus;
       }
-      label.fontWeight = 'bold';
+      label.fontWeight = "bold";
       label.fontSize = resolvedIpAddressLabelSize;
 
       label.hideOversized = true;
       label.truncate = true;
     });
 
-    nodeTemplate.events.on('sizechanged', function (ev) {
+    nodeTemplate.events.on("sizechanged", function (ev) {
       const label = ev.target.children.values.find(
-        (c) => c.dummyData === 'extra-label'
+        (c) => c.dummyData === "extra-label"
       );
       const rect = ev.target.children.values.find(
-        (c) => c.dummyData === 'extra-rectangle'
+        (c) => c.dummyData === "extra-rectangle"
       );
       if (!label) return;
 
@@ -563,16 +563,16 @@ function setupChart(options) {
 function filterChartDataOnDate(event) {
   const id = event.target.id;
   const date = new Date(event.target.value);
-  if (typeof date.getTime() !== 'number' || isNaN(date.getTime())) {
-    if (id === 'start') {
+  if (typeof date.getTime() !== "number" || isNaN(date.getTime())) {
+    if (id === "start") {
       START_DATE = null;
-    } else if (id === 'end') {
+    } else if (id === "end") {
       END_DATE = null;
     }
   } else {
-    if (id === 'start') {
+    if (id === "start") {
       START_DATE = date;
-    } else if (id === 'end') {
+    } else if (id === "end") {
       END_DATE = date;
     }
   }
@@ -586,7 +586,7 @@ function setChartDataWithFilters() {
     children: item.children.filter((subitem) => {
       if (!START_DATE && !END_DATE) return true;
 
-      if (typeof subitem.lastIssuanceDate === 'string') {
+      if (typeof subitem.lastIssuanceDate === "string") {
         return (
           (!START_DATE || START_DATE <= subitem.lastIssuanceDate) &&
           (!END_DATE || END_DATE >= subitem.lastIssuanceDate)
@@ -610,8 +610,8 @@ function setChartDataWithFilters() {
 }
 
 function toggleChoicesVisibility(prefix, force) {
-  const el = document.getElementById(prefix + '-choices');
+  const el = document.getElementById(prefix + "-choices");
   if (!el) return;
   el.style.display =
-    force || (el.style.display === 'list-item' ? 'none' : 'list-item');
+    force || (el.style.display === "list-item" ? "none" : "list-item");
 }

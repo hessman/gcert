@@ -41,12 +41,12 @@ export class CertificateReport {
       throw new Error("Domain on deny list");
     }
     if (
-      !app.todoDomains.includes(domain) &&
-      !app.doneDomains.includes(domain) &&
+      !app.todoDomains.has(domain) &&
+      !app.doneDomains.has(domain) &&
       !app.options.denyList.includes(domain)
     ) {
       log("New domain found : " + domain, Color.FgBlue);
-      app.todoDomains.push(domain);
+      app.todoDomains.add(domain);
     }
     this.commonName = commonName;
     this.queriedDomain = queriedDomain;

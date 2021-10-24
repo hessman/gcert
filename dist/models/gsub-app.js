@@ -9,7 +9,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const utils_1 = require("../utils");
 const certificate_report_1 = require("./certificate-report");
-const pkg = require('./../../package.json');
+const pkg = require("./../../package.json");
 var OutputFormat;
 (function (OutputFormat) {
     OutputFormat["json"] = "json";
@@ -19,34 +19,34 @@ var OutputFormat;
 class GsubApp {
     constructor() {
         this.certificateReports = [];
-        this.todoDomains = [];
-        this.doneDomains = [];
+        this.todoDomains = new Set();
+        this.doneDomains = new Set();
         this.options = {
             maxDepthLevel: 0,
             outputFormat: OutputFormat.html,
             onlyResolved: false,
             denyList: [],
             resolve: false,
-            initialTarget: '',
+            initialTarget: "",
         };
         const program = new commander_1.Command();
         program
-            .name('gsub')
-            .usage('-t domain.tld -r -d google.com google.fr -o html > report.html')
-            .description('Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.')
-            .version(GsubApp.VERSION, '-v, --version', 'output the current version')
-            .requiredOption('-t, --target [domain]', 'set the target domain')
-            .addOption(new commander_1.Option('-l, --depth-level <level>', 'set the depth level for the recursive domain discovery').default('0'))
-            .addOption(new commander_1.Option('-o, --output-format [format]', 'set the format for the report sent to stdout')
+            .name("gsub")
+            .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
+            .description("Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
+            .version(GsubApp.VERSION, "-v, --version", "output the current version")
+            .requiredOption("-t, --target [domain]", "set the target domain")
+            .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
+            .addOption(new commander_1.Option("-o, --output-format [format]", "set the format for the report sent to stdout")
             .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
-            .default('html'))
-            .addOption(new commander_1.Option('-R, --only-resolved', 'only output resolved domains'))
-            .addOption(new commander_1.Option('-r, --resolve', 'perform DNS and HTTP/S checks on domains'))
-            .addOption(new commander_1.Option('-d, --deny-list [domain...]', 'set the deny list for domains'))
+            .default("html"))
+            .addOption(new commander_1.Option("-R, --only-resolved", "only output resolved domains"))
+            .addOption(new commander_1.Option("-r, --resolve", "perform DNS and HTTP/S checks on domains"))
+            .addOption(new commander_1.Option("-d, --deny-list [domain...]", "set the deny list for domains"))
             .parse();
         const opts = program.opts();
         (0, utils_1.log)(GsubApp.HEADER);
-        (0, utils_1.log)(GsubApp.VERSION + '\n');
+        (0, utils_1.log)(GsubApp.VERSION + "\n");
         let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } = opts;
         const maxDepthLevel = depthLevel === undefined || isNaN(+depthLevel)
             ? GsubApp.DEFAULT_DEPTH_LEVEL
@@ -70,7 +70,7 @@ class GsubApp {
     }
     async getCertificateRecords(target = this.options.initialTarget, depthLevel = 0) {
         const { maxDepthLevel } = this.options;
-        this.doneDomains.push(target);
+        this.doneDomains.add(target);
         function parseGoogleResponse(res) {
             let rawData = res.data;
             const data = JSON.parse(rawData.slice(4))[0];
@@ -83,7 +83,7 @@ class GsubApp {
         let nextPage = null;
         do {
             const URL = nextPage
-                ? GsubApp.GOOGLE_BASE_URL + '/page'
+                ? GsubApp.GOOGLE_BASE_URL + "/page"
                 : GsubApp.GOOGLE_BASE_URL;
             const params = nextPage
                 ? {
@@ -124,7 +124,7 @@ class GsubApp {
                         };
                         let color = resolvedIpAddress ? utils_1.Color.FgYellow : utils_1.Color.FgWhite;
                         color = httpStatus === 200 ? utils_1.Color.FgGreen : color;
-                        (0, utils_1.log)(`${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : 'not resolved'}`, color);
+                        (0, utils_1.log)(`${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
                         this.certificateReports.push(certificateReport);
                     }
                     catch (err) {
@@ -139,11 +139,13 @@ class GsubApp {
         } while (nextPage);
         if (depthLevel !== maxDepthLevel) {
             const ops = [];
-            for (let i = 0; i < this.todoDomains.length; i++) {
-                const domain = this.todoDomains[i];
-                this.doneDomains.push(domain);
+            const todoDomains = [...this.todoDomains];
+            for (const domain of todoDomains) {
+                if (this.doneDomains.has(domain))
+                    continue;
                 ops.push(this.getCertificateRecords(domain, depthLevel + 1));
-                this.todoDomains.splice(i, 1);
+                this.todoDomains.delete(domain);
+                this.doneDomains.add(domain);
             }
             await Promise.all(ops);
         }
@@ -156,35 +158,35 @@ class GsubApp {
             case OutputFormat.csv:
                 const columns = [
                     {
-                        key: 'queriedDomain',
-                        header: 'Queried domain',
+                        key: "queriedDomain",
+                        header: "Queried domain",
                     },
                     {
-                        key: 'domain',
-                        header: 'Domain',
+                        key: "domain",
+                        header: "Domain",
                     },
                     {
-                        key: 'commonName',
-                        header: 'Common name',
+                        key: "commonName",
+                        header: "Common name",
                     },
                     {
-                        key: 'lastIssuanceDate',
-                        header: 'Last certificate issuance date',
+                        key: "lastIssuanceDate",
+                        header: "Last certificate issuance date",
                     },
                     {
-                        key: 'resolvedIpAddress',
-                        header: 'Resolved IP address',
+                        key: "resolvedIpAddress",
+                        header: "Resolved IP address",
                     },
                     {
-                        key: 'httpStatus',
-                        header: 'HTTP/S status (GET)',
+                        key: "httpStatus",
+                        header: "HTTP/S status (GET)",
                     },
                 ];
                 (0, utils_1.output)((0, sync_1.default)(this.certificateReports, {
                     columns,
                     header: true,
                     bom: true,
-                    record_delimiter: 'windows',
+                    record_delimiter: "windows",
                     cast: {
                         date(value) {
                             return value.toISOString();
@@ -201,7 +203,7 @@ class GsubApp {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Report</title>
   <style>  
-    ${(0, fs_1.readFileSync)((0, path_1.join)(process.cwd(), 'assets', 'css', 'index.css')).toString()}    
+    ${(0, fs_1.readFileSync)((0, path_1.join)(process.cwd(), "assets", "css", "index.css")).toString()}    
   </style>
 </head>
 <body>
@@ -254,7 +256,7 @@ class GsubApp {
 <script src="https://cdn.amcharts.com/lib/4/plugins/forceDirected.js"></script> 
 <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 <script>
-  ${(0, fs_1.readFileSync)((0, path_1.join)(process.cwd(), 'assets', 'js', 'index.js')).toString()}
+  ${(0, fs_1.readFileSync)((0, path_1.join)(process.cwd(), "assets", "js", "index.js")).toString()}
 
   var baseChartData = JSON.parse('${JSON.stringify(this.certificateReports.map((item) => ({
                     ...item,
@@ -307,5 +309,5 @@ GsubApp.HEADER = "\n\
 GsubApp.VERSION = pkg.version;
 GsubApp.DEFAULT_DEPTH_LEVEL = 0;
 GsubApp.DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
-GsubApp.GOOGLE_BASE_URL = 'https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch';
+GsubApp.GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
 //# sourceMappingURL=gsub-app.js.map

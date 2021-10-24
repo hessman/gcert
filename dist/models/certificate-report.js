@@ -29,11 +29,11 @@ class CertificateReport {
         if (app.options.denyList.includes(domain)) {
             throw new Error("Domain on deny list");
         }
-        if (!app.todoDomains.includes(domain) &&
-            !app.doneDomains.includes(domain) &&
+        if (!app.todoDomains.has(domain) &&
+            !app.doneDomains.has(domain) &&
             !app.options.denyList.includes(domain)) {
             (0, utils_1.log)("New domain found : " + domain, utils_1.Color.FgBlue);
-            app.todoDomains.push(domain);
+            app.todoDomains.add(domain);
         }
         this.commonName = commonName;
         this.queriedDomain = queriedDomain;
