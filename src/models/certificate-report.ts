@@ -54,7 +54,7 @@ export class CertificateReport {
 
   async getHttpStatus(): Promise<number | undefined> {
     try {
-      if (!this.commonName) return;
+      if (this.commonName.includes("*")) return
       const response = await axios.get("http://" + this.commonName);
       this.httpStatus = response.status;
       return this.httpStatus;
@@ -62,7 +62,7 @@ export class CertificateReport {
   }
   async resolve(): Promise<string | undefined> {
     try {
-      if (!this.commonName) return;
+      if (this.commonName.includes("*")) return
       const response = await dns.lookup(this.commonName);
       this.resolvedIpAddress = response.address;
       return this.resolvedIpAddress;

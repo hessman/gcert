@@ -74,7 +74,6 @@ class GsubApp {
                 footer: f,
             };
         }
-        (0, utils_1.log)("Checking CN records for domain : " + target, utils_1.Color.FgYellow);
         let nextPage = null;
         do {
             const URL = nextPage
@@ -93,7 +92,10 @@ class GsubApp {
                     params,
                 });
                 const { certs, footer } = parseGoogleResponse(response);
-                for (const cert of certs) {
+                const pageCount = +footer[4];
+                const currentPage = +footer[3];
+                for (let i = 0; i < certs.length; i++) {
+                    const cert = certs[i];
                     try {
                         const certificateReport = new certificate_report_1.CertificateReport(cert, this, target);
                         const [ipAddr, httpStatus] = await Promise.all([
@@ -103,14 +105,15 @@ class GsubApp {
                         if (this.options.onlyResolved && !ipAddr) {
                             continue;
                         }
-                        const { domain, commonName, resolvedIpAddress } = certificateReport;
-                        const result = `${domain} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`;
-                        if (httpStatus === 200) {
-                            (0, utils_1.log)(result, utils_1.Color.FgGreen);
-                        }
-                        else {
-                            (0, utils_1.log)(result);
-                        }
+                        const { commonName, resolvedIpAddress } = certificateReport;
+                        const currentMultiplier = (value) => {
+                            return certs.length === 10
+                                ? 10 * value
+                                : 9 * value + certs.length;
+                        };
+                        let color = resolvedIpAddress ? utils_1.Color.FgYellow : utils_1.Color.FgWhite;
+                        color = httpStatus === 200 ? utils_1.Color.FgGreen : color;
+                        (0, utils_1.log)(`current ${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${commonName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
                         this.certificateReports.push(certificateReport);
                     }
                     catch (err) {
@@ -120,9 +123,7 @@ class GsubApp {
                 nextPage = footer[1];
             }
             catch (err) {
-                if (!nextPage) {
-                    (0, utils_1.log)(`Invalid domain ${target}, skipping...`, utils_1.Color.FgRed);
-                }
+                // skipping
             }
         } while (nextPage);
         if (depthLevel !== maxDepthLevel) {

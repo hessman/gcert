@@ -132,7 +132,6 @@ export class GsubApp {
       };
     }
 
-    log("Checking CN records for domain : " + target, Color.FgYellow);
     let nextPage: string | null = null;
 
     do {
@@ -153,7 +152,10 @@ export class GsubApp {
           params,
         });
         const { certs, footer } = parseGoogleResponse(response);
-        for (const cert of certs) {
+        const pageCount = +footer[4];
+        const currentPage = +footer[3];
+        for (let i = 0; i < certs.length; i++) {
+          const cert = certs[i];
           try {
             const certificateReport = new CertificateReport(cert, this, target);
             const [ipAddr, httpStatus] = await Promise.all([
@@ -163,15 +165,22 @@ export class GsubApp {
             if (this.options.onlyResolved && !ipAddr) {
               continue;
             }
-            const { domain, commonName, resolvedIpAddress } = certificateReport;
-            const result = `${domain} - ${commonName} - ${
-              resolvedIpAddress ? resolvedIpAddress : "not resolved"
-            }`;
-            if (httpStatus === 200) {
-              log(result, Color.FgGreen);
-            } else {
-              log(result);
-            }
+            const { commonName, resolvedIpAddress } = certificateReport;
+            const currentMultiplier = (value: number): number => {
+              return certs.length === 10
+                ? 10 * value
+                : 9 * value + certs.length;
+            };
+            let color = resolvedIpAddress ? Color.FgYellow : Color.FgWhite;
+            color = httpStatus === 200 ? Color.FgGreen : color;
+            log(
+              `current ${target} - ${
+                i + 1 + currentMultiplier(currentPage - 1)
+              }/${currentMultiplier(pageCount)} - ${commonName} - ${
+                resolvedIpAddress ? resolvedIpAddress : "not resolved"
+              }`,
+              color
+            );
             this.certificateReports.push(certificateReport);
           } catch (err) {
             continue;
@@ -179,9 +188,7 @@ export class GsubApp {
         }
         nextPage = footer[1];
       } catch (err) {
-        if (!nextPage) {
-          log(`Invalid domain ${target}, skipping...`, Color.FgRed);
-        }
+        // skipping
       }
     } while (nextPage);
 
