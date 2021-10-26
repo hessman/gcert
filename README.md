@@ -1,4 +1,4 @@
-# Gsub 
+# Gcert
 
 This tool retrieves SSL/TLS certificate reports information from the [Google Transparency Report](https://transparencyreport.google.com/https/certificates) for a given domain.
 
@@ -10,7 +10,9 @@ The final report is sent to *stdout* and the progression to *stderr*.
 
 The HTML report provides a force-directed tree graph to analyze the results (thanks [NorthBlue333](https://github.com/northblue333) :tada:) :
 
-`docker run --rm hessman/gsub -t root-me.org -r -l 1 -d cloudflare.com cloudflaressl.com > tmp.html`
+`docker run --rm hessman/gcert -t root-me.org -r -l 1 -d cloudflare.com cloudflaressl.com > sample.html`
+
+The `sample.html` HTML is available [here](./sample.html).
 
 By domain :
 ![force directed tree](./docs/graph-domains.jpg)
@@ -18,14 +20,19 @@ By domain :
 By IP :
 ![force directed tree](./docs/graph-ips.jpg)
 
+By word :
+![force directed tree](./docs/graph-wordcloud.jpg)
+
+It can be filtered by DNS resolution and last certificate issuance date.
+
 ## Quick start
 
 ```
-docker pull hessman/gsub:latest
+docker pull hessman/gcert:latest
 
-docker run --rm hessman/gsub -h
+docker run --rm hessman/gcert -h
 
-Usage: gsub -t domain.tld -r -d google.com google.fr -o html > report.html
+Usage: gcert -t domain.tld -r -d google.com google.fr -o html > report.html
 
 Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.
 

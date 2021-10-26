@@ -1,4 +1,4 @@
-import { GsubApp } from "./models";
+import { GcertApp } from "./models";
 import { log } from "./utils";
 
 process.on("SIGINT", () => {
@@ -6,7 +6,7 @@ process.on("SIGINT", () => {
 });
 
 (async () => {
-  const app = new GsubApp();
+  const app = new GcertApp();
   await app.getCertificateRecords();
   app.outputCertificateReports();
 })().catch((err) => {

@@ -1,7 +1,7 @@
 import axios from "axios";
 import dns from "dns/promises";
 import { Color, log } from "../utils";
-import { GsubApp } from "./gsub-app";
+import { GcertApp } from "./gcert-app";
 
 export class CertificateReport {
   static commonNames: Set<string> = new Set();
@@ -13,7 +13,7 @@ export class CertificateReport {
   public httpStatus?: number;
   public resolvedIpAddress?: string;
 
-  constructor(data: any, app: GsubApp, queriedDomain: string) {
+  constructor(data: any, app: GcertApp, queriedDomain: string) {
     if (!data[1] || !data[3]) {
       throw new Error(
         "Missing common name or timestamp index in certificate data array"

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GsubApp = exports.OutputFormat = void 0;
+exports.GcertApp = exports.OutputFormat = void 0;
 const tslib_1 = require("tslib");
 const axios_1 = (0, tslib_1.__importDefault)(require("axios"));
 const commander_1 = require("commander");
@@ -16,7 +16,7 @@ var OutputFormat;
     OutputFormat["csv"] = "csv";
     OutputFormat["html"] = "html";
 })(OutputFormat = exports.OutputFormat || (exports.OutputFormat = {}));
-class GsubApp {
+class GcertApp {
     constructor() {
         this.certificateReports = [];
         this.todoDomains = new Set();
@@ -31,10 +31,10 @@ class GsubApp {
         };
         const program = new commander_1.Command();
         program
-            .name("gsub")
+            .name("gcert")
             .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
             .description("Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
-            .version(GsubApp.VERSION, "-v, --version", "output the current version")
+            .version(GcertApp.VERSION, "-v, --version", "output the current version")
             .requiredOption("-t, --target [domain]", "set the target domain")
             .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
             .addOption(new commander_1.Option("-o, --output-format [format]", "set the format for the report sent to stdout")
@@ -45,11 +45,11 @@ class GsubApp {
             .addOption(new commander_1.Option("-d, --deny-list [domain...]", "set the deny list for domains"))
             .parse();
         const opts = program.opts();
-        (0, utils_1.log)(GsubApp.HEADER);
-        (0, utils_1.log)(GsubApp.VERSION + "\n");
+        (0, utils_1.log)(GcertApp.HEADER);
+        (0, utils_1.log)(GcertApp.VERSION + "\n");
         let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } = opts;
         const maxDepthLevel = depthLevel === undefined || isNaN(+depthLevel)
-            ? GsubApp.DEFAULT_DEPTH_LEVEL
+            ? GcertApp.DEFAULT_DEPTH_LEVEL
             : +depthLevel;
         if (!(outputFormat in OutputFormat)) {
             outputFormat = OutputFormat.html;
@@ -83,8 +83,8 @@ class GsubApp {
         let nextPage = null;
         do {
             const URL = nextPage
-                ? GsubApp.GOOGLE_BASE_URL + "/page"
-                : GsubApp.GOOGLE_BASE_URL;
+                ? GcertApp.GOOGLE_BASE_URL + "/page"
+                : GcertApp.GOOGLE_BASE_URL;
             const params = nextPage
                 ? {
                     p: nextPage,
@@ -310,15 +310,15 @@ class GsubApp {
         }
     }
 }
-exports.GsubApp = GsubApp;
-GsubApp.HEADER = "\n\
-  __ _ ___ _   _| |__  \n\
- / _` / __| | | | '_ \\ \n\
-| (_| \\__ \\ |_| | |_) |\n\
- \\__, |___/\\__,_|_.__/ \n\
+exports.GcertApp = GcertApp;
+GcertApp.HEADER = "\n\
+  __ _  ___ ___ _ __| |_ \n\
+ / _` |/ __/ _ \\ '__| __|\n\
+| (_| | (_|  __/ |  | |_ \n\
+ \\__, |\\___\\___|_|   \\__|\n\
  |___/";
-GsubApp.VERSION = pkg.version;
-GsubApp.DEFAULT_DEPTH_LEVEL = 0;
-GsubApp.DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
-GsubApp.GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
-//# sourceMappingURL=gsub-app.js.map
+GcertApp.VERSION = pkg.version;
+GcertApp.DEFAULT_DEPTH_LEVEL = 0;
+GcertApp.DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
+GcertApp.GOOGLE_BASE_URL = "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
+//# sourceMappingURL=gcert-app.js.map

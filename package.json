@@ -1,5 +1,5 @@
 {
-  "name": "gsub",
+  "name": "gcert",
   "version": "0.1.0",
   "description": "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.",
   "main": "dist/index.js",

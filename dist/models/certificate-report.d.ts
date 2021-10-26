@@ -1,4 +1,4 @@
-import { GsubApp } from "./gsub-app";
+import { GcertApp } from "./gcert-app";
 export declare class CertificateReport {
     static commonNames: Set<string>;
     domain: string;
@@ -7,7 +7,7 @@ export declare class CertificateReport {
     lastIssuanceDate: Date;
     httpStatus?: number;
     resolvedIpAddress?: string;
-    constructor(data: any, app: GsubApp, queriedDomain: string);
+    constructor(data: any, app: GcertApp, queriedDomain: string);
     getHttpStatus(): Promise<number | undefined>;
     resolve(): Promise<string | undefined>;
 }

@@ -6,7 +6,7 @@ process.on("SIGINT", () => {
     process.exit(2);
 });
 (async () => {
-    const app = new models_1.GsubApp();
+    const app = new models_1.GcertApp();
     await app.getCertificateRecords();
     app.outputCertificateReports();
 })().catch((err) => {

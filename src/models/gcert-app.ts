@@ -7,7 +7,7 @@ import { Color, log, output } from "../utils";
 import { CertificateReport } from "./certificate-report";
 const pkg = require("./../../package.json");
 
-export interface GsubOptions {
+export interface GcertOptions {
   maxDepthLevel: number;
   outputFormat: OutputFormat;
   onlyResolved: boolean;
@@ -37,13 +37,13 @@ interface ChartData {
   }[];
 }
 
-export class GsubApp {
+export class GcertApp {
   static readonly HEADER =
     "\n\
-  __ _ ___ _   _| |__  \n\
- / _` / __| | | | '_ \\ \n\
-| (_| \\__ \\ |_| | |_) |\n\
- \\__, |___/\\__,_|_.__/ \n\
+  __ _  ___ ___ _ __| |_ \n\
+ / _` |/ __/ _ \\ '__| __|\n\
+| (_| | (_|  __/ |  | |_ \n\
+ \\__, |\\___\\___|_|   \\__|\n\
  |___/";
   static readonly VERSION = pkg.version;
   static readonly DEFAULT_DEPTH_LEVEL = 0;
@@ -55,7 +55,7 @@ export class GsubApp {
   public todoDomains: Set<string> = new Set();
   public doneDomains: Set<string> = new Set();
 
-  public options: GsubOptions = {
+  public options: GcertOptions = {
     maxDepthLevel: 0,
     outputFormat: OutputFormat.html,
     onlyResolved: false,
@@ -67,12 +67,12 @@ export class GsubApp {
   constructor() {
     const program = new Command();
     program
-      .name("gsub")
+      .name("gcert")
       .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
       .description(
         "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
       )
-      .version(GsubApp.VERSION, "-v, --version", "output the current version")
+      .version(GcertApp.VERSION, "-v, --version", "output the current version")
       .requiredOption("-t, --target [domain]", "set the target domain")
       .addOption(
         new Option(
@@ -104,15 +104,15 @@ export class GsubApp {
 
     const opts = program.opts();
 
-    log(GsubApp.HEADER);
-    log(GsubApp.VERSION + "\n");
+    log(GcertApp.HEADER);
+    log(GcertApp.VERSION + "\n");
 
     let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } =
       opts;
 
     const maxDepthLevel =
       depthLevel === undefined || isNaN(+depthLevel)
-        ? GsubApp.DEFAULT_DEPTH_LEVEL
+        ? GcertApp.DEFAULT_DEPTH_LEVEL
         : +depthLevel;
 
     if (!(outputFormat in OutputFormat)) {
@@ -161,8 +161,8 @@ export class GsubApp {
 
     do {
       const URL = nextPage
-        ? GsubApp.GOOGLE_BASE_URL + "/page"
-        : GsubApp.GOOGLE_BASE_URL;
+        ? GcertApp.GOOGLE_BASE_URL + "/page"
+        : GcertApp.GOOGLE_BASE_URL;
       const params = nextPage
         ? {
             p: nextPage,
