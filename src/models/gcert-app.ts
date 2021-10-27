@@ -22,20 +22,59 @@ export enum OutputFormat {
   html = "html",
 }
 
-interface ChartData {
-  id: string;
-  name: string;
-  value?: number;
-  linkWith: string[];
-  children: {
-    id: string;
-    name: string;
-    value?: number;
-    linkWith: string[];
-    status: number | null;
-    ipAddr: string | null;
-  }[];
-}
+export type GoogleCertificateList = [
+  [
+    _: string,
+    items: GoogleCertificateListCertificateItem[],
+    _2: unknown,
+    footer: GoogleCertificateListFooter
+  ]
+];
+
+export type GoogleCertificateListCertificateItem = [
+  _: unknown | null,
+  subject: string,
+  issuer: string,
+  validFromTimestamp: number,
+  validToTimestamp: number,
+  detailsId: string,
+  dnsNamesCount: number,
+  _2: unknown | null,
+  ctLogsCount: number
+];
+
+export type GoogleCertificateListFooter = [
+  previousPageId: string,
+  nextPageId: string,
+  _: unknown | null,
+  currentPage: number,
+  pageCount: number
+];
+
+export type GoogleCertificateDetail = [
+  [
+    _: string,
+    item: GoogleCertificateDetailItem,
+    ctLogs: GoogleCertificateDetailCtLog
+  ]
+];
+
+export type GoogleCertificateDetailItem = [
+  serialNumber: string,
+  subject: string,
+  issuer: string,
+  validFromTimestamp: number,
+  validToTimestamp: number,
+  _: unknown | null,
+  _2: unknown | null,
+  dnsNames: string[]
+];
+
+export type GoogleCertificateDetailCtLog = [
+  name: string,
+  _: unknown | null,
+  _2: number
+];
 
 export class GcertApp {
   static readonly HEADER =
@@ -145,11 +184,11 @@ export class GcertApp {
     this.doneDomains.add(target);
 
     function parseGoogleResponse(res: AxiosResponse): {
-      certs: Array<string>;
-      footer: Array<string>;
+      certs: GoogleCertificateListCertificateItem[];
+      footer: GoogleCertificateListFooter;
     } {
       let rawData = res.data as string;
-      const data = JSON.parse(rawData.slice(4))[0] as Array<Array<string>>;
+      const data = (JSON.parse(rawData.slice(4)) as GoogleCertificateList)[0];
       let [, c, , f] = data;
       return {
         certs: c,

@@ -1,7 +1,7 @@
 import axios from "axios";
 import dns from "dns/promises";
 import { Color, log } from "../utils";
-import { GcertApp } from "./gcert-app";
+import { GoogleCertificateListCertificateItem, GcertApp } from "./gcert-app";
 
 export class CertificateReport {
   static commonNames: Set<string> = new Set();
@@ -13,7 +13,11 @@ export class CertificateReport {
   public httpStatus?: number;
   public resolvedIpAddress?: string;
 
-  constructor(data: any, app: GcertApp, queriedDomain: string) {
+  constructor(
+    data: GoogleCertificateListCertificateItem,
+    app: GcertApp,
+    queriedDomain: string
+  ) {
     if (!data[1] || !data[3]) {
       throw new Error(
         "Missing common name or timestamp index in certificate data array"
@@ -29,7 +33,10 @@ export class CertificateReport {
       const certificateReport = app.certificateReports.find(
         (c) => c.commonName === commonName
       );
-      if (certificateReport && certificateReport.lastIssuanceDate < timestamp) {
+      if (
+        certificateReport &&
+        certificateReport.lastIssuanceDate.getTime() < timestamp
+      ) {
         certificateReport.lastIssuanceDate = new Date(timestamp);
       }
       throw new Error("Common name already done");
