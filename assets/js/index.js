@@ -40,51 +40,49 @@ function setupChartDatas() {
     return domainIndex;
   };
 
-  for (const certificateReport of baseChartData) {
-    const domainIndex = getDomainIndex(certificateReport.queriedDomain);
-    const currentDomainIndex = getDomainIndex(certificateReport.domain);
+  for (const gcertItem of baseChartData) {
+    const domainIndex = getDomainIndex(gcertItem.queriedDomain);
+    const currentDomainIndex = getDomainIndex(gcertItem.domain);
     const domainNewValue = (perDomainData[domainIndex].value || 0) + 1;
+    const domains = ["domain-" + gcertItem.queriedDomain];
+    gcertItem.domains.forEach((d) => domains.push("domain-" + d));
     const curentDomainNewValue =
       (perDomainData[currentDomainIndex].value || 0) + 1;
     perDomainData[domainIndex].value = domainNewValue;
     perDomainData[currentDomainIndex].value = curentDomainNewValue;
     perDomainData[currentDomainIndex].children.push({
-      id: "cn-" + certificateReport.commonName,
-      name: certificateReport.commonName,
+      id: "name-" + gcertItem.dnsName,
+      name: gcertItem.dnsName,
       value: 25,
-      httpStatus: certificateReport.httpStatus,
-      resolvedIpAddress: certificateReport.resolvedIpAddress,
-      lastIssuanceDate: certificateReport.date
-        ? new Date(certificateReport.date)
-        : null,
-      linkWith: ["domain-" + certificateReport.queriedDomain],
+      httpStatus: gcertItem.httpStatus,
+      resolvedIpAddress: gcertItem.resolvedIpAddress,
+      lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
+      linkWith: domains,
     });
 
-    if (certificateReport.resolvedIpAddress) {
-      let ipIndex = addedIps.get(certificateReport.resolvedIpAddress);
+    if (gcertItem.resolvedIpAddress) {
+      let ipIndex = addedIps.get(gcertItem.resolvedIpAddress);
       if (ipIndex === undefined) {
         const index =
           perIpData.push({
-            id: "ip-" + certificateReport.resolvedIpAddress,
-            name: certificateReport.resolvedIpAddress,
+            id: "ip-" + gcertItem.resolvedIpAddress,
+            name: gcertItem.resolvedIpAddress,
             value: 40,
             linkWith: [],
             children: [],
           }) - 1;
-        addedIps.set(certificateReport.resolvedIpAddress, index);
+        addedIps.set(gcertItem.resolvedIpAddress, index);
         ipIndex = index;
       }
       perIpData[ipIndex].value = (perIpData[ipIndex].value || 0) + 1;
       perIpData[ipIndex].children.push({
-        id: "cn-" + certificateReport.commonName,
-        name: certificateReport.commonName,
+        id: "name-" + gcertItem.dnsName,
+        name: gcertItem.dnsName,
         value: 25,
         linkWith: [],
-        httpStatus: certificateReport.httpStatus,
-        resolvedIpAddress: certificateReport.resolvedIpAddress,
-        lastIssuanceDate: certificateReport.date
-          ? new Date(certificateReport.date)
-          : null,
+        httpStatus: gcertItem.httpStatus,
+        resolvedIpAddress: gcertItem.resolvedIpAddress,
+        lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
       });
     }
 
@@ -126,28 +124,26 @@ function setupChartDatas() {
         ]),
       ];
       list[wordIndex].linkWith = wordLinks;
-      const wordcloudCommonNamePayload = {
-        id: "cn-" + certificateReport.commonName,
-        name: certificateReport.commonName,
+      const wordcloudDnsNamePayload = {
+        id: "name-" + gcertItem.dnsName,
+        name: gcertItem.dnsName,
         value: 15,
-        httpStatus: certificateReport.httpStatus,
-        resolvedIpAddress: certificateReport.resolvedIpAddress,
-        lastIssuanceDate: certificateReport.date
-          ? new Date(certificateReport.date)
-          : null,
+        httpStatus: gcertItem.httpStatus,
+        resolvedIpAddress: gcertItem.resolvedIpAddress,
+        lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
       };
       list[wordIndex].children.push({
-        ...wordcloudCommonNamePayload,
+        ...wordcloudDnsNamePayload,
         linkWith: [],
       });
     };
 
-    const commonNameSplitted = [
-      ...new Set(certificateReport.commonName.split(".").slice(0, -2)),
+    const dnsNameSplitted = [
+      ...new Set(gcertItem.dnsName.split(".").slice(0, -2)),
     ];
-    if (!!commonNameSplitted.length) {
-      for (const word of commonNameSplitted) {
-        addWordEntry(word, wordcloudData.base, commonNameSplitted);
+    if (!!dnsNameSplitted.length) {
+      for (const word of dnsNameSplitted) {
+        addWordEntry(word, wordcloudData.base, dnsNameSplitted);
         const splittedWord = word.split(/[^a-zA-Z0-9]/g);
         for (const subword of splittedWord) {
           addWordEntry(subword, wordcloudData.onlyWords, splittedWord);
@@ -225,8 +221,8 @@ function createChart() {
   nodeTemplate.label.truncate = true;
 }
 
-function getTooltipTemplateForCommonName(item, withIp = false) {
-  const txt = ["[bold]CN:[/] {name}"];
+function getTooltipTemplateForDnsName(item, withIp = false) {
+  const txt = ["[bold]DNS name:[/] {name}"];
   if (item.lastIssuanceDate) {
     txt.push(
       "[bold]Last issuance date:[/] " +
@@ -279,7 +275,7 @@ function setupChart(options) {
           " occurrences"
         );
       }
-      return getTooltipTemplateForCommonName(
+      return getTooltipTemplateForDnsName(
         target.dataItem.dataContext,
         isDomainChart
       );

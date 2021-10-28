@@ -21,8 +21,8 @@ class GcertItem {
                 gcertItem.lastIssuanceDate = issuanceDate;
             }
             for (const d of payload.domains) {
-                if (!gcertItem.domains.has(d)) {
-                    gcertItem.domains.add(d);
+                if (!gcertItem.domains.includes(d)) {
+                    gcertItem.domains.push(d);
                 }
             }
             throw new Error("DNS name already done");
@@ -39,7 +39,7 @@ class GcertItem {
         }
         this.dnsName = dnsName;
         this.queriedDomain = queriedDomain;
-        this.domains = domains;
+        this.domains = [...new Set(...domains)];
         this.lastIssuanceDate = issuanceDate;
     }
     async getHttpStatus() {

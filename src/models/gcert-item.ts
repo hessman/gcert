@@ -14,7 +14,7 @@ export interface GcertItemCreationPayload {
 export class GcertItem {
   static dnsNames: Set<string> = new Set();
 
-  public domains: Set<string>;
+  public domains: Array<string>;
   public dnsName: string;
   public queriedDomain: string;
   public lastIssuanceDate: Date;
@@ -37,8 +37,8 @@ export class GcertItem {
         gcertItem.lastIssuanceDate = issuanceDate;
       }
       for (const d of payload.domains) {
-        if (!gcertItem.domains.has(d)) {
-          gcertItem.domains.add(d);
+        if (!gcertItem.domains.includes(d)) {
+          gcertItem.domains.push(d);
         }
       }
       throw new Error("DNS name already done");
@@ -58,7 +58,7 @@ export class GcertItem {
     }
     this.dnsName = dnsName;
     this.queriedDomain = queriedDomain;
-    this.domains = domains;
+    this.domains = [...new Set(...domains)];
     this.lastIssuanceDate = issuanceDate;
   }
 
