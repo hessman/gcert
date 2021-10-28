@@ -248,17 +248,36 @@ export class GcertApp {
             if (!cert[5]) return;
 
             try {
-              const { details } = parseGoogleDetailsResponse(
-                await axios.get(GcertApp.GOOGLE_BASE_URL + "/certbyhash", {
-                  params: {
-                    hash: cert[5],
-                  },
-                })
-              );
+              // The needed information are already requested if the DNS names count <= 1
+              const { details } =
+                cert[6] > 1
+                  ? parseGoogleDetailsResponse(
+                      await axios.get(
+                        GcertApp.GOOGLE_BASE_URL + "/certbyhash",
+                        {
+                          params: {
+                            hash: cert[5],
+                          },
+                        }
+                      )
+                    )
+                  : {
+                      details: [
+                        undefined,
+                        undefined,
+                        undefined,
+                        cert[3],
+                        undefined,
+                        undefined,
+                        undefined,
+                        [psl.get(cert[1])],
+                      ] as const,
+                    };
 
               const dnsNamesWithDomain = [];
               const domains: Set<string> = new Set();
               for (const dnsName of details[7]) {
+                if (!dnsName) continue;
                 const domain = psl.get(dnsName);
                 if (!domain) continue;
                 domains.add(domain);
