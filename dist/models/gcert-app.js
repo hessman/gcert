@@ -113,58 +113,62 @@ class GcertApp {
                     (0, utils_1.log)(`Start processing ${pageCount * 10} reports for ${target}`, utils_1.Color.FgCyan);
                 }
                 const currentPage = +footer[3];
+                const pagePromises = [];
                 for (let i = 0; i < certs.length; i++) {
-                    const cert = certs[i];
-                    if (!cert[5])
-                        continue;
-                    try {
-                        const { details } = parseGoogleDetailsResponse(await axios_1.default.get(GcertApp.GOOGLE_BASE_URL + "/certbyhash", {
-                            params: {
-                                hash: cert[5],
-                            },
-                        }));
-                        const dnsNamesWithDomain = [];
-                        const domains = new Set();
-                        for (const dnsName of details[7]) {
-                            const domain = psl_1.default.get(dnsName);
-                            if (!domain)
-                                continue;
-                            domains.add(domain);
-                            dnsNamesWithDomain.push({
-                                domain,
-                                dnsName,
-                            });
-                        }
-                        for (const { domain, dnsName } of dnsNamesWithDomain) {
-                            const item = new gcert_item_1.GcertItem({
-                                dnsName,
-                                domain,
-                                queriedDomain: target,
-                                issuanceDate: new Date(details[3]),
-                                domains,
-                            }, this);
-                            const [ipAddr, httpStatus] = this.options.resolve
-                                ? await Promise.all([item.resolve(), item.getHttpStatus()])
-                                : [undefined, undefined];
-                            if (this.options.onlyResolved && !ipAddr) {
-                                continue;
+                    const handleCertificateRecord = async (cert, index) => {
+                        if (!cert[5])
+                            return;
+                        try {
+                            const { details } = parseGoogleDetailsResponse(await axios_1.default.get(GcertApp.GOOGLE_BASE_URL + "/certbyhash", {
+                                params: {
+                                    hash: cert[5],
+                                },
+                            }));
+                            const dnsNamesWithDomain = [];
+                            const domains = new Set();
+                            for (const dnsName of details[7]) {
+                                const domain = psl_1.default.get(dnsName);
+                                if (!domain)
+                                    continue;
+                                domains.add(domain);
+                                dnsNamesWithDomain.push({
+                                    domain,
+                                    dnsName,
+                                });
                             }
-                            const { resolvedIpAddress } = item;
-                            const currentMultiplier = (value) => {
-                                return certs.length === 10
-                                    ? 10 * value
-                                    : 10 * (value - 1) + certs.length;
-                            };
-                            let color = resolvedIpAddress ? utils_1.Color.FgYellow : utils_1.Color.FgWhite;
-                            color = httpStatus === 200 ? utils_1.Color.FgGreen : color;
-                            (0, utils_1.log)(`${target} - ${i + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${dnsName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
-                            this.items.push(item);
+                            for (const { domain, dnsName } of dnsNamesWithDomain) {
+                                const item = new gcert_item_1.GcertItem({
+                                    dnsName,
+                                    domain,
+                                    queriedDomain: target,
+                                    issuanceDate: new Date(details[3]),
+                                    domains,
+                                }, this);
+                                const [ipAddr, httpStatus] = this.options.resolve
+                                    ? await Promise.all([item.resolve(), item.getHttpStatus()])
+                                    : [undefined, undefined];
+                                if (this.options.onlyResolved && !ipAddr) {
+                                    continue;
+                                }
+                                const { resolvedIpAddress } = item;
+                                const currentMultiplier = (value) => {
+                                    return certs.length === 10
+                                        ? 10 * value
+                                        : 10 * (value - 1) + certs.length;
+                                };
+                                let color = resolvedIpAddress ? utils_1.Color.FgYellow : utils_1.Color.FgWhite;
+                                color = httpStatus === 200 ? utils_1.Color.FgGreen : color;
+                                (0, utils_1.log)(`${target} - ${index + 1 + currentMultiplier(currentPage - 1)}/${currentMultiplier(pageCount)} - ${dnsName} - ${resolvedIpAddress ? resolvedIpAddress : "not resolved"}`, color);
+                                this.items.push(item);
+                            }
                         }
-                    }
-                    catch (err) {
-                        continue;
-                    }
+                        catch (err) {
+                            return;
+                        }
+                    };
+                    pagePromises.push(handleCertificateRecord(certs[i], i));
                 }
+                await Promise.all(pagePromises);
                 nextPage = footer[1];
             }
             catch (err) {
@@ -173,16 +177,16 @@ class GcertApp {
             }
         } while (nextPage);
         if (depthLevel !== maxDepthLevel) {
-            const ops = [];
+            const domainPromises = [];
             const todoDomains = [...this.todoDomains];
             for (const domain of todoDomains) {
                 if (this.doneDomains.has(domain))
                     continue;
-                ops.push(this.getCertificateRecords(domain, depthLevel + 1));
+                domainPromises.push(this.getCertificateRecords(domain, depthLevel + 1));
                 this.doneDomains.add(domain);
                 this.todoDomains.delete(domain);
             }
-            await Promise.all(ops);
+            await Promise.all(domainPromises);
         }
     }
     outputCertificateReports() {
