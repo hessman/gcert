@@ -1,11 +1,11 @@
 import axios, { AxiosResponse } from "axios";
 import { Command, Option } from "commander";
 import stringify from "csv-stringify/lib/sync";
-import { readFileSync } from "fs";
 import { join } from "path";
 import psl from "psl";
 import { Color, log, output } from "../utils";
 import { GcertItem } from "./gcert-item";
+import { renderFile } from "pug";
 const pkg = require("./../../package.json");
 
 export interface GcertOptions {
@@ -363,7 +363,7 @@ export class GcertApp {
             header: "Queried domain",
           },
           {
-            key: "domains",
+            key: "linkedDomains",
             header: "Domains",
           },
           {
@@ -398,120 +398,35 @@ export class GcertApp {
         );
         break;
       case OutputFormat.html:
-        return output(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Report</title>
-  <style>  
-    ${readFileSync(
-      join(process.cwd(), "assets", "css", "index.css")
-    ).toString()}    
-  </style>
-</head>
-<body>
-  <main>
-    <div id="chartdiv"></div>
-    <nav>
-      <ul>
-        <li>
-          <input type="radio" name="chartMode" id="domains" oninput="changeChartMode('domains')" checked />
-          <label class="radio-label" for="domains">Domains</label>
-        </li>
-        <li>
-          <input type="radio" name="chartMode" id="ips" oninput="changeChartMode('ips')" />
-          <label class="radio-label" for="ips">Ips</label>
-        </li>
-        <li>
-          <input type="radio" name="chartMode" id="wordcoud" oninput="changeChartMode('wordcloud')" />
-          <label class="radio-label" for="wordcoud">Wordcloud</label>
-        </li>
-      </ul>
-      <ul>
-        <li id="domains-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="domains-links" id="domains-links" oninput="filterChartDataOn(event)" checked />
-          <label class="radio-label" for="domains-links">Links between domains</label>
-        </li>
-        <li id="wordcloud-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="filterChartDataOn(event)" checked />
-          <label class="radio-label" for="wordcloud-links">Links between words</label>
-          <input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="filterChartDataOn(event)" />
-          <label class="radio-label" for="wordcloud-domains">Show domains</label>
-          <input type="checkbox" name="wordcloud-only-words" id="wordcloud-only-words" oninput="changeChartOptions({ onlyWords: event.target.checked })" checked />
-          <label class="radio-label" for="wordcloud-only-words">Words only</label>
-        </li>
-        <li id="global-choices" style="visibility: 'hidden';">
-          <input type="checkbox" name="global-only-resolved" id="global-only-resolved" oninput="filterChartDataOn(event)" />
-          <label class="radio-label" for="global-only-resolved">Only resolved</label>
-        </li>
-        <li>
-          <label class="date-label" for="start">Last issuance date between</label>
-          <input type="date" id="start" name="start" oninput="filterChartDataOn(event)" />
-          <label class="date-label" for="end">and</label>
-          <input type="date" id="end" name="end" oninput="filterChartDataOn(event)" />
-        </li>
-      </ul>
-      </nav>
-  </main>
-</body>
-<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
-<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
-<script src="https://cdn.amcharts.com/lib/4/plugins/forceDirected.js"></script> 
-<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
-<script>
-  ${readFileSync(join(process.cwd(), "assets", "js", "index.js")).toString()}
-
-  var baseChartData = JSON.parse('${JSON.stringify(
-    this.items.map((item) => ({
-      ...item,
-      date: item.lastIssuanceDate ? item.lastIssuanceDate.toISOString() : null,
-    }))
-  )}');
-  var chartMode = 'domains';
-  var chartOptions = null;
-
-  function changeChartMode(mode) {
-    if(!['domains', 'ips', 'wordcloud'].includes(mode)) return;
-    chartMode = mode;
-    if(mode !== chartMode) {
-      chartOptions = null;
-      if(mode === 'wordcloud') {
-        filterChartDataOn({ target: { checked: true, id: 'wordcloud-links' } });
-      }
-    }
-    switch(chartMode) {
-      case 'domains':
-        chartOptions = chartOptions ? chartOptions : {};
-        toggleChoicesVisibility('domains', 'list-item');
-        toggleChoicesVisibility('wordcloud', 'none');
-        setupChart({...chartOptions, mode: 'domains'});
-        break;
-      case 'ips':
-        chartOptions = chartOptions ? chartOptions : {};
-        toggleChoicesVisibility('wordcloud', 'none');
-        toggleChoicesVisibility('domains', 'none');
-        setupChart({...chartOptions, mode: 'ips'});
-        break;
-      case 'wordcloud':
-        chartOptions = chartOptions ? chartOptions : { onlyWords: true };
-        toggleChoicesVisibility('wordcloud', 'list-item');
-        toggleChoicesVisibility('domains', 'none');
-        setupChart({...chartOptions, mode: 'wordcloud'});
-        break;
-    }
-  }
-
-  function changeChartOptions(options) {
-    chartOptions = { ...(chartOptions ? chartOptions : {}), ...options };
-    changeChartMode(chartMode);
-  }
-
-  changeChartMode('domains');
-</script>
-</html>
-`);
+        return output(
+          renderFile(join(process.cwd(), "assets", "pug", "graph.pug"), {
+            title: `Report for ${this.options.initialTarget}`,
+            baseChartData: JSON.stringify(
+              this.items.map((item) => ({
+                ...item,
+                date: item.lastIssuanceDate
+                  ? item.lastIssuanceDate.toISOString()
+                  : null,
+                linkedDomains: [...item.linkedDomains.values()],
+              }))
+            ),
+            chartModes: {
+              domains: [{ name: "Links between domains", value: "links" }],
+              ips: [],
+              wordcloud: [
+                { name: "Links between words", value: "links" },
+                { name: "Show domains", value: "domains" },
+                {
+                  name: "Words only",
+                  value: "only-words",
+                  changeChartOptions: true,
+                  chartOption: "onlyWords",
+                },
+              ],
+            },
+            globalOptions: [{ name: "Only resolved", value: "only-resolved" }],
+          })
+        );
       default:
         break;
     }

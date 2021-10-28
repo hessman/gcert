@@ -14,7 +14,8 @@ export interface GcertItemCreationPayload {
 export class GcertItem {
   static dnsNames: Set<string> = new Set();
 
-  public domains: Array<string>;
+  public linkedDomains: Set<string>;
+  public domain: string;
   public dnsName: string;
   public queriedDomain: string;
   public lastIssuanceDate: Date;
@@ -37,9 +38,7 @@ export class GcertItem {
         gcertItem.lastIssuanceDate = issuanceDate;
       }
       for (const d of payload.domains) {
-        if (!gcertItem.domains.includes(d)) {
-          gcertItem.domains.push(d);
-        }
+        gcertItem.linkedDomains.add(d);
       }
       throw new Error("DNS name already done");
     }
@@ -56,9 +55,10 @@ export class GcertItem {
       log("New domain found : " + domain, Color.FgBlue);
       app.todoDomains.add(domain);
     }
+    this.domain = domain;
     this.dnsName = dnsName;
     this.queriedDomain = queriedDomain;
-    this.domains = [...new Set(...domains)];
+    this.linkedDomains = domains;
     this.lastIssuanceDate = issuanceDate;
   }
 

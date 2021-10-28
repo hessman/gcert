@@ -21,9 +21,7 @@ class GcertItem {
                 gcertItem.lastIssuanceDate = issuanceDate;
             }
             for (const d of payload.domains) {
-                if (!gcertItem.domains.includes(d)) {
-                    gcertItem.domains.push(d);
-                }
+                gcertItem.linkedDomains.add(d);
             }
             throw new Error("DNS name already done");
         }
@@ -37,9 +35,10 @@ class GcertItem {
             (0, utils_1.log)("New domain found : " + domain, utils_1.Color.FgBlue);
             app.todoDomains.add(domain);
         }
+        this.domain = domain;
         this.dnsName = dnsName;
         this.queriedDomain = queriedDomain;
-        this.domains = [...new Set(...domains)];
+        this.linkedDomains = domains;
         this.lastIssuanceDate = issuanceDate;
     }
     async getHttpStatus() {

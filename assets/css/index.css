@@ -11,8 +11,8 @@ body {
 }
 
 button,
-input[type='submit'],
-input[type='reset'] {
+input[type="submit"],
+input[type="reset"] {
   background: none;
   color: inherit;
   border: none;
@@ -32,11 +32,19 @@ main > * {
   width: 100%;
 }
 
-#chartdiv {
-  height: 100%;
+main h1 {
+  text-align: center;
+  padding: 1rem;
+  font-size: 20px;
 }
 
-main input[type='radio'] {
+#chartdiv {
+  height: 100%;
+  border-top: 1px solid grey;
+  border-bottom: 1px solid grey;
+}
+
+main input[type="radio"] {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
   text-transform: uppercase;

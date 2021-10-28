@@ -1,9 +1,6 @@
 let PER_DOMAIN = null;
 let PER_IP = null;
-let WORDCLOUD = {
-  base: null,
-  onlyWords: null,
-};
+let WORDCLOUD = null;
 let CHART_DATA_UNFILTERED = null;
 let CHART_DATA_MODE = null;
 
@@ -14,6 +11,10 @@ let FILTER_WITH_LINKS = true;
 let FILTER_WITH_DOMAINS = true;
 
 function setupChartDatas() {
+  if (PER_DOMAIN && PER_IP && WORDCLOUD) {
+    return;
+  }
+
   const addedDomains = new Map();
   const addedIps = new Map();
   const addedWords = new Map();
@@ -41,23 +42,26 @@ function setupChartDatas() {
   };
 
   for (const gcertItem of baseChartData) {
-    const domainIndex = getDomainIndex(gcertItem.queriedDomain);
     const currentDomainIndex = getDomainIndex(gcertItem.domain);
-    const domainNewValue = (perDomainData[domainIndex].value || 0) + 1;
-    const domains = ["domain-" + gcertItem.queriedDomain];
-    gcertItem.domains.forEach((d) => domains.push("domain-" + d));
+    const linkWith = ["domain-" + gcertItem.queriedDomain];
+    for (const d of [...gcertItem.linkedDomains]) {
+      const domainIndex = getDomainIndex(d);
+      perDomainData[domainIndex].value =
+        (perDomainData[domainIndex].value || 0) + 1;
+      linkWith.push();
+    }
     const curentDomainNewValue =
       (perDomainData[currentDomainIndex].value || 0) + 1;
-    perDomainData[domainIndex].value = domainNewValue;
+
     perDomainData[currentDomainIndex].value = curentDomainNewValue;
     perDomainData[currentDomainIndex].children.push({
-      id: "name-" + gcertItem.dnsName,
+      id: "dnsName-" + gcertItem.dnsName,
       name: gcertItem.dnsName,
       value: 25,
       httpStatus: gcertItem.httpStatus,
       resolvedIpAddress: gcertItem.resolvedIpAddress,
       lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
-      linkWith: domains,
+      linkWith,
     });
 
     if (gcertItem.resolvedIpAddress) {
@@ -76,7 +80,7 @@ function setupChartDatas() {
       }
       perIpData[ipIndex].value = (perIpData[ipIndex].value || 0) + 1;
       perIpData[ipIndex].children.push({
-        id: "name-" + gcertItem.dnsName,
+        id: "dnsName-" + gcertItem.dnsName,
         name: gcertItem.dnsName,
         value: 25,
         linkWith: [],
@@ -125,7 +129,7 @@ function setupChartDatas() {
       ];
       list[wordIndex].linkWith = wordLinks;
       const wordcloudDnsNamePayload = {
-        id: "name-" + gcertItem.dnsName,
+        id: "dnsName-" + gcertItem.dnsName,
         name: gcertItem.dnsName,
         value: 15,
         httpStatus: gcertItem.httpStatus,
@@ -138,13 +142,14 @@ function setupChartDatas() {
       });
     };
 
-    const dnsNameSplitted = [
-      ...new Set(gcertItem.dnsName.split(".").slice(0, -2)),
-    ];
-    if (!!dnsNameSplitted.length) {
-      for (const word of dnsNameSplitted) {
-        addWordEntry(word, wordcloudData.base, dnsNameSplitted);
-        const splittedWord = word.split(/[^a-zA-Z0-9]/g);
+    if (gcertItem.domain !== gcertItem.dnsName) {
+      const dnsNameWithoutDomain = gcertItem.dnsName.replace(
+        "." + gcertItem.domain,
+        ""
+      );
+      if (dnsNameWithoutDomain) {
+        addWordEntry(dnsNameWithoutDomain, wordcloudData.base, []);
+        const splittedWord = dnsNameWithoutDomain.split(/[^a-zA-Z0-9]/g);
         for (const subword of splittedWord) {
           addWordEntry(subword, wordcloudData.onlyWords, splittedWord);
         }
@@ -158,11 +163,8 @@ function setupChartDatas() {
   if (!PER_IP) {
     PER_IP = perIpData;
   }
-  if (!WORDCLOUD.base) {
-    WORDCLOUD.base = wordcloudData.base;
-  }
-  if (!WORDCLOUD.onlyWords) {
-    WORDCLOUD.onlyWords = wordcloudData.onlyWords;
+  if (!WORDCLOUD) {
+    WORDCLOUD = wordcloudData;
   }
 }
 
@@ -454,6 +456,9 @@ function filterChartDataOn(event) {
     FILTER_WITH_DOMAINS = !!event.target.checked;
   }
 
+  console.log(FILTER_START_DATE);
+  console.log(FILTER_END_DATE);
+
   setChartDataWithFilters();
 }
 
@@ -470,14 +475,6 @@ function setChartDataWithFilters() {
 
       if (!FILTER_START_DATE && !FILTER_END_DATE) return true;
 
-      if (typeof subitem.lastIssuanceDate === "string") {
-        return (
-          (!FILTER_START_DATE ||
-            FILTER_START_DATE <= subitem.lastIssuanceDate) &&
-          (!FILTER_END_DATE || FILTER_END_DATE >= subitem.lastIssuanceDate)
-        );
-      }
-
       if (Array.isArray(subitem.lastIssuanceDate)) {
         for (const issuanceDate of subitem.lastIssuanceDate) {
           if (
@@ -487,6 +484,12 @@ function setChartDataWithFilters() {
             return true;
           }
         }
+      } else {
+        return (
+          (!FILTER_START_DATE ||
+            FILTER_START_DATE <= subitem.lastIssuanceDate) &&
+          (!FILTER_END_DATE || FILTER_END_DATE >= subitem.lastIssuanceDate)
+        );
       }
 
       return false;
@@ -541,9 +544,61 @@ function setChartDataWithFilters() {
   }).filter((item) => !!item.children.length);
 }
 
-function toggleChoicesVisibility(prefix, force) {
-  const el = document.getElementById(prefix + "-choices");
-  if (!el) return;
-  el.style.display =
-    force || (el.style.display === "list-item" ? "none" : "list-item");
+function toggleChoicesVisibility(prefix) {
+  for (const el of document.querySelectorAll("li[id$='-choices']")) {
+    el.style.display = "none";
+  }
+  const currentEl = document.getElementById(prefix + "-choices");
+  if (!currentEl) return;
+  currentEl.style.display = "list-item";
 }
+
+function checkChoice(mode, option) {
+  const el = document.getElementById(mode + "-" + option);
+  if (!el) return;
+  el.checked = true;
+}
+
+var chartMode = "domains";
+var chartOptions = null;
+
+function changeChartMode(mode, options) {
+  if (!["domains", "ips", "wordcloud"].includes(mode)) return;
+  chartMode = mode;
+  if (mode !== chartMode) {
+    chartOptions = null;
+    if (mode === "wordcloud") {
+      filterChartDataOn({ target: { checked: true, id: "wordcloud-links" } });
+    }
+  }
+  switch (chartMode) {
+    case "domains":
+      chartOptions = options ? options : {};
+      toggleChoicesVisibility("domains");
+      checkChoice("domains", "links");
+
+      setupChart({ ...chartOptions, mode: "domains" });
+      break;
+    case "ips":
+      chartOptions = options ? options : {};
+      toggleChoicesVisibility("ips");
+      setupChart({ ...chartOptions, mode: "ips" });
+      break;
+    case "wordcloud":
+      chartOptions = options ? options : { onlyWords: true };
+      toggleChoicesVisibility("wordcloud");
+      checkChoice("wordcloud", "links");
+      if (chartOptions.onlyWords) {
+        checkChoice("wordcloud", "only-words");
+      }
+      setupChart({ ...chartOptions, mode: "wordcloud" });
+      break;
+  }
+}
+
+function changeChartOptions(options) {
+  const opts = { ...(chartOptions ? chartOptions : {}), ...options };
+  changeChartMode(chartMode, opts);
+}
+
+changeChartMode("domains");

@@ -8,7 +8,8 @@ export interface GcertItemCreationPayload {
 }
 export declare class GcertItem {
     static dnsNames: Set<string>;
-    domains: Array<string>;
+    linkedDomains: Set<string>;
+    domain: string;
     dnsName: string;
     queriedDomain: string;
     lastIssuanceDate: Date;
