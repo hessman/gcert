@@ -3,8 +3,9 @@ import { Command, Option } from "commander";
 import stringify from "csv-stringify/lib/sync";
 import { readFileSync } from "fs";
 import { join } from "path";
+import psl from "psl";
 import { Color, log, output } from "../utils";
-import { CertificateReport } from "./certificate-report";
+import { GcertItem } from "./gcert-item";
 const pkg = require("./../../package.json");
 
 export interface GcertOptions {
@@ -88,9 +89,9 @@ export class GcertApp {
   static readonly DEFAULT_DEPTH_LEVEL = 0;
   static readonly DEFAULT_OUTPUT_FORMAT = OutputFormat.html;
   static readonly GOOGLE_BASE_URL =
-    "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch";
+    "https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct";
 
-  public certificateReports: CertificateReport[] = [];
+  public items: GcertItem[] = [];
   public todoDomains: Set<string> = new Set();
   public doneDomains: Set<string> = new Set();
 
@@ -183,7 +184,7 @@ export class GcertApp {
 
     this.doneDomains.add(target);
 
-    function parseGoogleResponse(res: AxiosResponse): {
+    function parseGoogleSearchResponse(res: AxiosResponse): {
       certs: GoogleCertificateListCertificateItem[];
       footer: GoogleCertificateListFooter;
     } {
@@ -196,12 +197,25 @@ export class GcertApp {
       };
     }
 
+    function parseGoogleDetailsResponse(res: AxiosResponse): {
+      details: GoogleCertificateDetailItem;
+    } {
+      let rawData = res.data as string;
+      const data = (JSON.parse(rawData.slice(4)) as GoogleCertificateDetail)[0];
+      let [, d] = data;
+      return {
+        details: d,
+      };
+    }
+
     let nextPage: string | null = null;
+    let previousPage: string | null = null;
 
     do {
+      previousPage = nextPage;
       const URL = nextPage
-        ? GcertApp.GOOGLE_BASE_URL + "/page"
-        : GcertApp.GOOGLE_BASE_URL;
+        ? GcertApp.GOOGLE_BASE_URL + "/certsearch/page"
+        : GcertApp.GOOGLE_BASE_URL + "/certsearch";
       const params = nextPage
         ? {
             p: nextPage,
@@ -212,10 +226,11 @@ export class GcertApp {
           };
 
       try {
-        const response = await axios.get(URL, {
-          params,
-        });
-        const { certs, footer } = parseGoogleResponse(response);
+        const { certs, footer } = parseGoogleSearchResponse(
+          await axios.get(URL, {
+            params,
+          })
+        );
         const pageCount = +footer[4];
         if (!nextPage) {
           log(
@@ -226,41 +241,72 @@ export class GcertApp {
         const currentPage = +footer[3];
         for (let i = 0; i < certs.length; i++) {
           const cert = certs[i];
+
+          if (!cert[5]) continue;
+
           try {
-            const certificateReport = new CertificateReport(cert, this, target);
-            const [ipAddr, httpStatus] = this.options.resolve
-              ? await Promise.all([
-                  certificateReport.resolve(),
-                  certificateReport.getHttpStatus(),
-                ])
-              : [undefined, undefined];
-            if (this.options.onlyResolved && !ipAddr) {
-              continue;
-            }
-            const { commonName, resolvedIpAddress } = certificateReport;
-            const currentMultiplier = (value: number): number => {
-              return certs.length === 10
-                ? 10 * value
-                : 10 * (value - 1) + certs.length;
-            };
-            let color = resolvedIpAddress ? Color.FgYellow : Color.FgWhite;
-            color = httpStatus === 200 ? Color.FgGreen : color;
-            log(
-              `${target} - ${
-                i + 1 + currentMultiplier(currentPage - 1)
-              }/${currentMultiplier(pageCount)} - ${commonName} - ${
-                resolvedIpAddress ? resolvedIpAddress : "not resolved"
-              }`,
-              color
+            const { details } = parseGoogleDetailsResponse(
+              await axios.get(GcertApp.GOOGLE_BASE_URL + "/certbyhash", {
+                params: {
+                  hash: cert[5],
+                },
+              })
             );
-            this.certificateReports.push(certificateReport);
+
+            const dnsNamesWithDomain = [];
+            const domains: Set<string> = new Set();
+            for (const dnsName of details[7]) {
+              const domain = psl.get(dnsName);
+              if (!domain) continue;
+              domains.add(domain);
+              dnsNamesWithDomain.push({
+                domain,
+                dnsName,
+              });
+            }
+
+            for (const { domain, dnsName } of dnsNamesWithDomain) {
+              const item = new GcertItem(
+                {
+                  dnsName,
+                  domain,
+                  queriedDomain: target,
+                  issuanceDate: new Date(details[3]),
+                  domains,
+                },
+                this
+              );
+              const [ipAddr, httpStatus] = this.options.resolve
+                ? await Promise.all([item.resolve(), item.getHttpStatus()])
+                : [undefined, undefined];
+              if (this.options.onlyResolved && !ipAddr) {
+                continue;
+              }
+              const { resolvedIpAddress } = item;
+              const currentMultiplier = (value: number): number => {
+                return certs.length === 10
+                  ? 10 * value
+                  : 10 * (value - 1) + certs.length;
+              };
+              let color = resolvedIpAddress ? Color.FgYellow : Color.FgWhite;
+              color = httpStatus === 200 ? Color.FgGreen : color;
+              log(
+                `${target} - ${
+                  i + 1 + currentMultiplier(currentPage - 1)
+                }/${currentMultiplier(pageCount)} - ${dnsName} - ${
+                  resolvedIpAddress ? resolvedIpAddress : "not resolved"
+                }`,
+                color
+              );
+              this.items.push(item);
+            }
           } catch (err) {
             continue;
           }
         }
         nextPage = footer[1];
       } catch (err) {
-        // skipping
+        if (previousPage === nextPage) break;
       }
     } while (nextPage);
 
@@ -280,11 +326,11 @@ export class GcertApp {
   outputCertificateReports() {
     switch (this.options.outputFormat) {
       case OutputFormat.json:
-        output(JSON.stringify(this.certificateReports));
+        output(JSON.stringify(this.items));
         break;
       case OutputFormat.csv:
         const columns: Array<{
-          key: keyof CertificateReport;
+          key: keyof GcertItem;
           header: string;
         }> = [
           {
@@ -292,12 +338,12 @@ export class GcertApp {
             header: "Queried domain",
           },
           {
-            key: "domain",
-            header: "Domain",
+            key: "domains",
+            header: "Domains",
           },
           {
-            key: "commonName",
-            header: "Common name",
+            key: "dnsName",
+            header: "DNS name",
           },
           {
             key: "lastIssuanceDate",
@@ -313,7 +359,7 @@ export class GcertApp {
           },
         ];
         output(
-          stringify(this.certificateReports, {
+          stringify(this.items, {
             columns,
             header: true,
             bom: true,
@@ -393,7 +439,7 @@ export class GcertApp {
   ${readFileSync(join(process.cwd(), "assets", "js", "index.js")).toString()}
 
   var baseChartData = JSON.parse('${JSON.stringify(
-    this.certificateReports.map((item) => ({
+    this.items.map((item) => ({
       ...item,
       date: item.lastIssuanceDate ? item.lastIssuanceDate.toISOString() : null,
     }))

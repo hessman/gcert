@@ -1,2 +1,2 @@
-export * from "./certificate-report";
+export * from "./gcert-item";
 export * from "./gcert-app";
