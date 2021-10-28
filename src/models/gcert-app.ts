@@ -110,7 +110,7 @@ export class GcertApp {
       .name("gcert")
       .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
       .description(
-        "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
+        "Retrieves SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
       )
       .version(GcertApp.VERSION, "-v, --version", "output the current version")
       .requiredOption("-t, --target [domain]", "set the target domain")

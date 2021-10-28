@@ -1,7 +1,7 @@
 {
   "name": "gcert",
-  "version": "0.1.0",
-  "description": "Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.",
+  "version": "0.2.0",
+  "description": "Retrieves SSL/TLS certificate reports information from the Google Transparency Report for a given domain.",
   "main": "dist/index.js",
   "engines": {
     "node": ">=16"

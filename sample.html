@@ -1,0 +1,698 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Report for root-me.org</title><style>* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input[type="submit"],
+input[type="reset"] {
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+main > * {
+  width: 100%;
+}
+
+main h1 {
+  text-align: center;
+  padding: 1rem;
+  font-size: 20px;
+}
+
+#chartdiv {
+  height: 100%;
+  border-top: 1px solid grey;
+  border-bottom: 1px solid grey;
+}
+
+main input[type="radio"] {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  text-transform: uppercase;
+  border-radius: 5%;
+}
+
+main label.radio-label,
+main label.date-label {
+  padding: 0.75rem;
+  margin-left: 0.5rem;
+  text-transform: uppercase;
+  border-radius: 5%;
+}
+
+main label.radio-label {
+  padding-left: 0;
+  margin-right: 0.5rem;
+}
+
+main label.date-label {
+  margin-left: 0.5rem;
+  margin-right: 0.25rem;
+}
+
+main label.date-label:first-of-type {
+  margin-left: 2rem;
+}
+
+main nav {
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+main nav > ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  list-style: none;
+  width: 100%;
+  padding: 1rem 0;
+}
+</style></head><body><main><h1>Report for root-me.org</h1><div id="chartdiv"></div><nav><ul> <li><input type="radio" name="chart-mode" id="domains" oninput="changeChartMode('domains')" checked><label class="radio-label" for="domains">domains</label></li><li><input type="radio" name="chart-mode" id="ips" oninput="changeChartMode('ips')"><label class="radio-label" for="ips">ips</label></li><li><input type="radio" name="chart-mode" id="wordcloud" oninput="changeChartMode('wordcloud')"><label class="radio-label" for="wordcloud">wordcloud</label></li></ul><ul> <li id="domains-choices" style="display: none;"><input type="checkbox" name="domains-links" id="domains-links" oninput="filterChartDataOn(event)"><label class="radio-label" for="domains-links">Links between domains</label></li><li id="wordcloud-choices" style="display: none;"><input type="checkbox" name="wordcloud-links" id="wordcloud-links" oninput="filterChartDataOn(event)"><label class="radio-label" for="wordcloud-links">Links between words</label><input type="checkbox" name="wordcloud-domains" id="wordcloud-domains" oninput="filterChartDataOn(event)"><label class="radio-label" for="wordcloud-domains">Show domains</label><input type="checkbox" name="wordcloud-only-words" id="wordcloud-only-words" oninput="changeChartOptions({ onlyWords: event.target.checked })"><label class="radio-label" for="wordcloud-only-words">Words only</label></li><li id="global-choices" style="display: none;"><input type="checkbox" name="global-only-resolved" id="global-only-resolved" oninput="filterChartDataOn(event)"><label class="radio-label" for="global-only-resolved">Only resolved</label></li><li><label class="date-label" for="start">Last issuance date between</label><input id="start" type="date" name="start" oninput="filterChartDataOn(event)"><label class="date-label" for="end">and</label><input id="end" type="date" name="end" oninput="filterChartDataOn(event)"></li></ul></nav></main></body></html><script src="https://cdn.amcharts.com/lib/4/core.js"></script><script src="https://cdn.amcharts.com/lib/4/charts.js"></script><script src="https://cdn.amcharts.com/lib/4/plugins/forceDirected.js"></script><script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script><script>var baseChartData = JSON.parse('[{"domain":"root-me.org","dnsName":"root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-06-24T14:32:00.000Z","resolvedIpAddress":"212.129.28.16","httpStatus":200,"date":"2021-06-24T14:32:00.000Z"},{"domain":"hackerzvoice.net","dnsName":"irc.hackerzvoice.net","queriedDomain":"root-me.org","linkedDomains":["hackerzvoice.net","root-me.org"],"lastIssuanceDate":"2021-09-09T21:53:44.000Z","resolvedIpAddress":"51.210.70.121","date":"2021-09-09T21:53:44.000Z"},{"domain":"root-me.org","dnsName":"irc.root-me.org","queriedDomain":"root-me.org","linkedDomains":["hackerzvoice.net","root-me.org"],"lastIssuanceDate":"2021-07-11T21:52:45.000Z","resolvedIpAddress":"51.210.70.121","date":"2021-07-11T21:52:45.000Z"},{"domain":"root-me.org","dnsName":"dev.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-08-22T05:44:36.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-08-22T05:44:36.000Z"},{"domain":"hackerzvoice.net","dnsName":"hackerzvoice.net","queriedDomain":"root-me.org","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2021-10-25T15:09:46.000Z","resolvedIpAddress":"171.33.125.204","httpStatus":200,"date":"2021-10-25T15:09:46.000Z"},{"domain":"root-me.org","dnsName":"pro.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-07-17T15:29:35.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-07-17T15:29:35.000Z"},{"domain":"root-me.org","dnsName":"repository.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-04-22T04:51:54.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-04-22T04:51:54.000Z"},{"domain":"root-me.org","dnsName":"librenms.service.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-28T18:56:46.000Z","resolvedIpAddress":"212.129.28.12","date":"2021-09-28T18:56:46.000Z"},{"domain":"root-me.org","dnsName":"service.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-28T18:56:46.000Z","resolvedIpAddress":"212.129.28.12","date":"2021-09-28T18:56:46.000Z"},{"domain":"root-me.org","dnsName":"www.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-15T07:49:43.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-09-15T07:49:43.000Z"},{"domain":"root-me.org","dnsName":"api.www.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-07T06:53:18.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-09-07T06:53:18.000Z"},{"domain":"root-me.org","dnsName":"ipv4.www.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-26T02:10:28.000Z","resolvedIpAddress":"212.129.28.16","date":"2021-09-26T02:10:28.000Z"},{"domain":"root-me.org","dnsName":"ipv6.www.root-me.org","queriedDomain":"root-me.org","linkedDomains":["root-me.org"],"lastIssuanceDate":"2021-09-15T10:56:19.000Z","resolvedIpAddress":"2001:bc8:35b0:27::100","httpStatus":200,"date":"2021-09-15T10:56:19.000Z"},{"domain":"hackerzvoice.net","dnsName":"forums.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2021-10-25T15:09:46.000Z","resolvedIpAddress":"171.33.125.204","httpStatus":200,"date":"2021-10-25T15:09:46.000Z"},{"domain":"hackerzvoice.net","dnsName":"assondhodoo.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2021-07-20T21:19:25.000Z","resolvedIpAddress":"195.154.50.236","date":"2021-07-20T21:19:25.000Z"},{"domain":"hackerzvoice.net","dnsName":"www.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2011-12-13T00:00:00.000Z","resolvedIpAddress":"171.33.125.204","httpStatus":200,"date":"2011-12-13T00:00:00.000Z"},{"domain":"hackerzvoice.net","dnsName":"imap.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hzv.fr","dnsName":"imap.hzv.fr","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hackerzvoice.net","dnsName":"imaps.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hzv.fr","dnsName":"mail.hzv.fr","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hackerzvoice.net","dnsName":"pop.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hackerzvoice.net","dnsName":"pops.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hackerzvoice.net","dnsName":"smtp.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hzv.fr","dnsName":"smtp.hzv.fr","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hackerzvoice.net","dnsName":"smtps.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net","hzv.fr"],"lastIssuanceDate":"2021-09-01T23:06:21.000Z","resolvedIpAddress":"212.83.153.201","date":"2021-09-01T23:06:21.000Z"},{"domain":"hzv.fr","dnsName":"hzv.fr","queriedDomain":"hackerzvoice.net","linkedDomains":["hzv.fr"],"lastIssuanceDate":"2018-12-16T23:06:00.000Z","resolvedIpAddress":"195.154.50.236","date":"2018-12-16T23:06:00.000Z"},{"domain":"hackerzvoice.net","dnsName":"preprod.www.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2021-09-08T21:19:12.000Z","resolvedIpAddress":"195.154.50.236","httpStatus":200,"date":"2021-09-08T21:19:12.000Z"},{"domain":"hackerzvoice.net","dnsName":"webmail.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2011-12-13T00:00:00.000Z","resolvedIpAddress":"171.33.125.204","date":"2011-12-13T00:00:00.000Z"},{"domain":"hackerzvoice.net","dnsName":"www.webmail.hackerzvoice.net","queriedDomain":"hackerzvoice.net","linkedDomains":["hackerzvoice.net"],"lastIssuanceDate":"2011-12-13T00:00:00.000Z","resolvedIpAddress":"171.33.125.204","httpStatus":200,"date":"2011-12-13T00:00:00.000Z"}]');let PER_DOMAIN = null;
+let PER_IP = null;
+let WORDCLOUD = null;
+let CHART_DATA_UNFILTERED = null;
+let CHART_DATA_MODE = null;
+
+let FILTER_START_DATE = null;
+let FILTER_END_DATE = null;
+let FILTER_ONLY_RESOLVED = false;
+let FILTER_WITH_LINKS = true;
+let FILTER_WITH_DOMAINS = true;
+
+function setupChartDatas() {
+  if (PER_DOMAIN && PER_IP && WORDCLOUD) {
+    return;
+  }
+
+  const addedDomains = new Map();
+  const addedIps = new Map();
+  const addedWords = new Map();
+  const perDomainData = [];
+  const perIpData = [];
+  const wordcloudData = {
+    base: [],
+    onlyWords: [],
+  };
+
+  const getDomainIndex = (domain) => {
+    let domainIndex = addedDomains.get(domain);
+    if (domainIndex === undefined) {
+      const payload = {
+        id: "domain-" + domain,
+        name: domain,
+        value: 40,
+      };
+      const index =
+        perDomainData.push({ ...payload, linkWith: [], children: [] }) - 1;
+      addedDomains.set(domain, index);
+      domainIndex = index;
+    }
+    return domainIndex;
+  };
+
+  for (const gcertItem of baseChartData) {
+    const currentDomainIndex = getDomainIndex(gcertItem.domain);
+    const linkWith = ["domain-" + gcertItem.queriedDomain];
+    for (const d of [...gcertItem.linkedDomains]) {
+      const domainIndex = getDomainIndex(d);
+      perDomainData[domainIndex].value =
+        (perDomainData[domainIndex].value || 0) + 1;
+      linkWith.push();
+    }
+    const curentDomainNewValue =
+      (perDomainData[currentDomainIndex].value || 0) + 1;
+
+    perDomainData[currentDomainIndex].value = curentDomainNewValue;
+    perDomainData[currentDomainIndex].children.push({
+      id: "dnsName-" + gcertItem.dnsName,
+      name: gcertItem.dnsName,
+      value: 25,
+      httpStatus: gcertItem.httpStatus,
+      resolvedIpAddress: gcertItem.resolvedIpAddress,
+      lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
+      linkWith,
+    });
+
+    if (gcertItem.resolvedIpAddress) {
+      let ipIndex = addedIps.get(gcertItem.resolvedIpAddress);
+      if (ipIndex === undefined) {
+        const index =
+          perIpData.push({
+            id: "ip-" + gcertItem.resolvedIpAddress,
+            name: gcertItem.resolvedIpAddress,
+            value: 40,
+            linkWith: [],
+            children: [],
+          }) - 1;
+        addedIps.set(gcertItem.resolvedIpAddress, index);
+        ipIndex = index;
+      }
+      perIpData[ipIndex].value = (perIpData[ipIndex].value || 0) + 1;
+      perIpData[ipIndex].children.push({
+        id: "dnsName-" + gcertItem.dnsName,
+        name: gcertItem.dnsName,
+        value: 25,
+        linkWith: [],
+        httpStatus: gcertItem.httpStatus,
+        resolvedIpAddress: gcertItem.resolvedIpAddress,
+        lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
+      });
+    }
+
+    const getWordIndex = (word) => {
+      let wordIndex = addedWords.get(word);
+      if (wordIndex === undefined) {
+        const payload = {
+          id: "word-" + word,
+          name: word,
+          value: 20,
+        };
+        const index =
+          wordcloudData.base.push({
+            ...payload,
+            linkWith: [],
+            children: [],
+          }) - 1;
+
+        wordcloudData.onlyWords.push({
+          ...payload,
+          linkWith: [],
+          children: [],
+        });
+        addedWords.set(word, index);
+        wordIndex = index;
+      }
+      return wordIndex;
+    };
+
+    const addWordEntry = (word, list, wordList) => {
+      let wordIndex = getWordIndex(word);
+
+      const newValue = (list[wordIndex].value || 0) + 1;
+      list[wordIndex].value = newValue;
+      const wordLinks = [
+        ...new Set([
+          ...wordList.filter((w) => w !== word).map((w) => "word-" + w),
+          ...list[wordIndex].linkWith,
+        ]),
+      ];
+      list[wordIndex].linkWith = wordLinks;
+      const wordcloudDnsNamePayload = {
+        id: "dnsName-" + gcertItem.dnsName,
+        name: gcertItem.dnsName,
+        value: 15,
+        httpStatus: gcertItem.httpStatus,
+        resolvedIpAddress: gcertItem.resolvedIpAddress,
+        lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
+      };
+      list[wordIndex].children.push({
+        ...wordcloudDnsNamePayload,
+        linkWith: [],
+      });
+    };
+
+    if (gcertItem.domain !== gcertItem.dnsName) {
+      const dnsNameWithoutDomain = gcertItem.dnsName.replace(
+        "." + gcertItem.domain,
+        ""
+      );
+      if (dnsNameWithoutDomain) {
+        addWordEntry(dnsNameWithoutDomain, wordcloudData.base, []);
+        const splittedWord = dnsNameWithoutDomain.split(/[^a-zA-Z0-9]/g);
+        for (const subword of splittedWord) {
+          addWordEntry(subword, wordcloudData.onlyWords, splittedWord);
+        }
+      }
+    }
+  }
+
+  if (!PER_DOMAIN) {
+    PER_DOMAIN = perDomainData;
+  }
+  if (!PER_IP) {
+    PER_IP = perIpData;
+  }
+  if (!WORDCLOUD) {
+    WORDCLOUD = wordcloudData;
+  }
+}
+
+const circleLabelSize = 15;
+const resolvedIpAddressLabelSize = 10;
+
+let chart;
+let networkSeries;
+let nodeTemplate;
+
+am4core.useTheme(am4themes_animated);
+function createChart() {
+  if (chart) {
+    chart.dispose();
+  }
+  chart = am4core.create(
+    "chartdiv",
+    am4plugins_forceDirected.ForceDirectedTree
+  );
+  chart.zoomable = true;
+  networkSeries = chart.series.push(
+    new am4plugins_forceDirected.ForceDirectedSeries()
+  );
+
+  networkSeries.dataFields.linkWith = "linkWith";
+  networkSeries.dataFields.name = "name";
+  networkSeries.dataFields.id = "id";
+  networkSeries.dataFields.value = "value";
+  networkSeries.dataFields.children = "children";
+
+  networkSeries.nodes.template.label.text = "{name}";
+
+  nodeTemplate = networkSeries.nodes.template;
+  nodeTemplate.tooltipText = "{name}";
+  nodeTemplate.fillOpacity = 1;
+
+  const linkTemplate = networkSeries.links.template;
+  linkTemplate.states.create("hover");
+
+  nodeTemplate.events.on("over", function (event) {
+    const dataItem = event.target.dataItem;
+    dataItem.childLinks.each(function (link) {
+      link.isHover = true;
+    });
+  });
+
+  nodeTemplate.events.on("out", function (event) {
+    const dataItem = event.target.dataItem;
+    dataItem.childLinks.each(function (link) {
+      link.isHover = false;
+    });
+  });
+
+  nodeTemplate.label.fontSize = circleLabelSize;
+  nodeTemplate.label.hideOversized = true;
+  nodeTemplate.label.truncate = true;
+}
+
+function getTooltipTemplateForDnsName(item, withIp = false) {
+  const txt = ["[bold]DNS name:[/] {name}"];
+  if (item.lastIssuanceDate) {
+    txt.push(
+      "[bold]Last issuance date:[/] " +
+        getLastIssuanceDateString(item.lastIssuanceDate)
+    );
+  }
+  if (withIp && item.resolvedIpAddress) {
+    txt.push("[bold]IP:[/] " + item.resolvedIpAddress);
+  }
+  if (item.httpStatus) {
+    txt.push("[bold]HTTP status:[/] " + item.httpStatus);
+  }
+  return txt.join("\n");
+}
+
+function getLastIssuanceDateString(lastIssuanceDate) {
+  return (
+    (lastIssuanceDate.getMonth() + 1).toString().padStart(2, "0") +
+    "/" +
+    lastIssuanceDate.getDate().toString().padStart(2, "0") +
+    "/" +
+    lastIssuanceDate.getFullYear() +
+    " " +
+    lastIssuanceDate.getHours().toString().padStart(2, "0") +
+    ":" +
+    lastIssuanceDate.getMinutes().toString().padStart(2, "0") +
+    ":" +
+    lastIssuanceDate.getSeconds().toString().padStart(2, "0") +
+    " UTC"
+  );
+}
+
+function setupChart(options) {
+  if (!["domains", "ips", "wordcloud"].includes(options.mode)) {
+    return;
+  }
+  createChart();
+  setupChartDatas();
+
+  const isDomainChart = options.mode === "domains";
+  const isIpsChart = options.mode === "ips";
+
+  const tooltipGetter = (mode, target) => {
+    if (target.dataItem.dataContext.lastIssuanceDate) {
+      if (Array.isArray(target.dataItem.dataContext.lastIssuanceDate)) {
+        return (
+          (FILTER_ONLY_RESOLVED
+            ? target.dataItem.dataContext.resolvedIpAddress.length
+            : target.dataItem.dataContext.lastIssuanceDate.length) +
+          " occurrences"
+        );
+      }
+      return getTooltipTemplateForDnsName(
+        target.dataItem.dataContext,
+        isDomainChart
+      );
+    } else {
+      if (mode === "wordcloud") {
+        let count;
+        if (FILTER_ONLY_RESOLVED) {
+          count = FILTER_WITH_DOMAINS
+            ? target.dataItem.dataContext.children.filter(
+                (c) => !!c.resolvedIpAddress
+              ).length
+            : target.dataItem.dataContext.children[0].resolvedIpAddress.length;
+        } else {
+          count = FILTER_WITH_DOMAINS
+            ? target.dataItem.dataContext.children.length
+            : target.dataItem.dataContext.children[0].lastIssuanceDate.length;
+        }
+        return "[bold]Word:[/] {name}\n[bold]Occurrences:[/] " + count;
+      }
+      return isDomainChart ? "[bold]Domain:[/] {name}" : "[bold]IP:[/] {name}";
+    }
+  };
+  switch (options.mode) {
+    case "domains":
+      chart.data = PER_DOMAIN;
+      break;
+    case "ips":
+      chart.data = PER_IP;
+      break;
+    case "wordcloud":
+      chart.data = options.onlyWords ? WORDCLOUD.onlyWords : WORDCLOUD.base;
+
+      nodeTemplate.scale = 0.4;
+      networkSeries.links.template.distance = 1;
+      break;
+  }
+
+  CHART_DATA_UNFILTERED = chart.data;
+  CHART_DATA_MODE = options.mode;
+  setChartDataWithFilters();
+
+  nodeTemplate.adapter.add("tooltipText", function (text, target, key) {
+    return tooltipGetter(options.mode, target);
+  });
+
+  if (options.mode === "wordcloud" && !FILTER_WITH_DOMAINS) {
+    nodeTemplate.label.adapter.add("text", function (text, target, key) {
+      if (
+        !target.parent.dataItem.dataContext.name.includes("{count-occurrences}")
+      )
+        return text;
+      return target.parent.dataItem.dataContext.name.replace(
+        "{count-occurrences}",
+        FILTER_ONLY_RESOLVED
+          ? target.parent.dataItem.dataContext.resolvedIpAddress.length
+          : target.parent.dataItem.dataContext.lastIssuanceDate.length
+      );
+    });
+  }
+
+  if (options.mode !== "wordcloud") {
+    nodeTemplate.circle.events.on("ready", function (event) {
+      if (event.target.parent.children.length > 3) return;
+      const dataContext = event.target.parent.dataItem.dataContext;
+      if (
+        (isDomainChart && !dataContext.resolvedIpAddress) ||
+        (isIpsChart && !dataContext.httpStatus)
+      ) {
+        return;
+      }
+
+      let radius = event.target.pixelRadius;
+      const ds = event.target.defaultState;
+      const dsRadius = ds.properties.radius;
+      if (typeof dsRadius === "number") {
+        radius = dsRadius;
+      }
+      const baseSize = 2 * radius;
+
+      const height = Math.max(Math.min(baseSize * 0.15, 20), 15);
+      const width = Math.min(
+        Math.round(baseSize * 0.99),
+        isDomainChart ? 100 : 30
+      );
+
+      const httpStatusElem = event.target.parent.createChild(
+        am4core.RoundedRectangle
+      );
+      httpStatusElem.dummyData = "extra-rectangle";
+      httpStatusElem.fill =
+        dataContext.httpStatus === 200 ? "#9ACD32" : "#DCDCDC";
+      httpStatusElem.horizontalCenter = "middle";
+      httpStatusElem.verticalCenter = "middle";
+      httpStatusElem.y = baseSize / 2;
+      httpStatusElem.x = am4core.percent(50);
+      httpStatusElem.height = height;
+      httpStatusElem.width = width;
+
+      const label = event.target.parent.createChild(am4core.Label);
+      label.dummyData = "extra-label";
+      label.shouldClone = false;
+      label.horizontalCenter = "middle";
+      label.verticalCenter = "middle";
+      label.strokeOpacity = 0;
+      label.interactionsEnabled = false;
+      label.textAlign = "middle";
+      label.textValign = "middle";
+      label.nonScaling = true;
+      label.y = baseSize / 2;
+      label.x = am4core.percent(50);
+      label.height = height;
+      label.width = width;
+      if (isDomainChart) {
+        label.text = "";
+
+        if (dataContext.resolvedIpAddress) {
+          label.text += dataContext.resolvedIpAddress + " ";
+        }
+        if (dataContext.httpStatus) {
+          label.text += "(" + dataContext.httpStatus + ")";
+        }
+      } else {
+        label.text = dataContext.httpStatus;
+      }
+      label.fontWeight = "bold";
+      label.fontSize = resolvedIpAddressLabelSize;
+
+      label.hideOversized = true;
+      label.truncate = true;
+    });
+
+    nodeTemplate.events.on("sizechanged", function (ev) {
+      const label = ev.target.children.values.find(
+        (c) => c.dummyData === "extra-label"
+      );
+      const rect = ev.target.children.values.find(
+        (c) => c.dummyData === "extra-rectangle"
+      );
+      if (!label) return;
+
+      let scale = 1;
+
+      if (ev.target.parent && ev.target.parent.parent) {
+        scale = ev.target.parent.parent.scale;
+      }
+
+      label.width = rect.pixelWidth * scale;
+      label.height = rect.pixelHeight * scale;
+    });
+  }
+}
+
+function filterChartDataOn(event) {
+  const id = event.target.id;
+
+  if (["start", "end"].includes(id)) {
+    const date = new Date(event.target.value);
+    if (typeof date.getTime() !== "number" || isNaN(date.getTime())) {
+      if (id === "start") {
+        FILTER_START_DATE = null;
+      } else {
+        FILTER_END_DATE = null;
+      }
+    } else {
+      if (id === "start") {
+        FILTER_START_DATE = date;
+      } else {
+        FILTER_END_DATE = date;
+      }
+    }
+  } else if (id === "global-only-resolved") {
+    FILTER_ONLY_RESOLVED = !!event.target.checked;
+  } else if (["domains-links", "wordcloud-links"].includes(id)) {
+    FILTER_WITH_LINKS = !!event.target.checked;
+  } else if (id === "wordcloud-domains") {
+    FILTER_WITH_DOMAINS = !!event.target.checked;
+  }
+
+  console.log(FILTER_START_DATE);
+  console.log(FILTER_END_DATE);
+
+  setChartDataWithFilters();
+}
+
+function setChartDataWithFilters() {
+  chart.data = CHART_DATA_UNFILTERED.map((item) => {
+    const children = item.children.filter((subitem) => {
+      if (
+        FILTER_ONLY_RESOLVED &&
+        (!subitem.resolvedIpAddress ||
+          (Array.isArray(subitem.resolvedIpAddress) &&
+            !subitem.resolvedIpAddress.length))
+      )
+        return false;
+
+      if (!FILTER_START_DATE && !FILTER_END_DATE) return true;
+
+      if (Array.isArray(subitem.lastIssuanceDate)) {
+        for (const issuanceDate of subitem.lastIssuanceDate) {
+          if (
+            (!FILTER_START_DATE || FILTER_START_DATE <= issuanceDate) &&
+            (!FILTER_END_DATE || FILTER_END_DATE >= issuanceDate)
+          ) {
+            return true;
+          }
+        }
+      } else {
+        return (
+          (!FILTER_START_DATE ||
+            FILTER_START_DATE <= subitem.lastIssuanceDate) &&
+          (!FILTER_END_DATE || FILTER_END_DATE >= subitem.lastIssuanceDate)
+        );
+      }
+
+      return false;
+    });
+    if (CHART_DATA_MODE === "wordcloud") {
+      const lastIssuanceDate = [];
+      const resolvedIpAddress = [];
+      const finalChildren = [];
+      for (const child of children) {
+        if (child.lastIssuanceDate) {
+          lastIssuanceDate.push(child.lastIssuanceDate);
+        }
+        if (child.resolvedIpAddress) {
+          resolvedIpAddress.push(child.resolvedIpAddress);
+        }
+        finalChildren.push(
+          !FILTER_WITH_LINKS ? { ...child, linkWith: [] } : child
+        );
+      }
+      return {
+        ...item,
+        linkWith: FILTER_WITH_LINKS ? item.linkWith : [],
+
+        children:
+          CHART_DATA_MODE === "wordcloud" && !FILTER_WITH_DOMAINS
+            ? [
+                {
+                  id: "count-" + item.name,
+                  name: "{count-occurrences}",
+                  value: 15,
+                  linkWith: [],
+                  lastIssuanceDate: lastIssuanceDate,
+                  resolvedIpAddress: resolvedIpAddress,
+                },
+              ]
+            : finalChildren,
+      };
+    }
+    return {
+      ...item,
+      linkWith:
+        CHART_DATA_MODE !== "ips" && !FILTER_WITH_LINKS ? [] : item.linkWith,
+      children: children.map((c) =>
+        CHART_DATA_MODE !== "ips" && !FILTER_WITH_LINKS
+          ? {
+              ...c,
+              linkWith: [],
+            }
+          : c
+      ),
+    };
+  }).filter((item) => !!item.children.length);
+}
+
+function toggleChoicesVisibility(prefix) {
+  for (const el of document.querySelectorAll("li[id$='-choices']")) {
+    el.style.display = "none";
+  }
+  const currentEl = document.getElementById(prefix + "-choices");
+  if (!currentEl) return;
+  currentEl.style.display = "list-item";
+}
+
+function checkChoice(mode, option) {
+  const el = document.getElementById(mode + "-" + option);
+  if (!el) return;
+  el.checked = true;
+}
+
+var chartMode = "domains";
+var chartOptions = null;
+
+function changeChartMode(mode, options) {
+  if (!["domains", "ips", "wordcloud"].includes(mode)) return;
+  chartMode = mode;
+  if (mode !== chartMode) {
+    chartOptions = null;
+    if (mode === "wordcloud") {
+      filterChartDataOn({ target: { checked: true, id: "wordcloud-links" } });
+    }
+  }
+  switch (chartMode) {
+    case "domains":
+      chartOptions = options ? options : {};
+      toggleChoicesVisibility("domains");
+      checkChoice("domains", "links");
+
+      setupChart({ ...chartOptions, mode: "domains" });
+      break;
+    case "ips":
+      chartOptions = options ? options : {};
+      toggleChoicesVisibility("ips");
+      setupChart({ ...chartOptions, mode: "ips" });
+      break;
+    case "wordcloud":
+      chartOptions = options ? options : { onlyWords: true };
+      toggleChoicesVisibility("wordcloud");
+      checkChoice("wordcloud", "links");
+      if (chartOptions.onlyWords) {
+        checkChoice("wordcloud", "only-words");
+      }
+      setupChart({ ...chartOptions, mode: "wordcloud" });
+      break;
+  }
+}
+
+function changeChartOptions(options) {
+  const opts = { ...(chartOptions ? chartOptions : {}), ...options };
+  changeChartMode(chartMode, opts);
+}
+
+changeChartMode("domains");
+</script></script>
+</html>
