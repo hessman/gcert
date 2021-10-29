@@ -3,7 +3,7 @@ doctype html
 html(lang="en")
   head
     meta(charset="UTF-8")
-    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title #{title}
     style
       include ../css/index.css
@@ -15,23 +15,23 @@ html(lang="en")
         ul 
           each mode in Object.keys(chartModes)
             li
-              input(type='radio', name='chart-mode', id=mode, oninput!="changeChartMode('" + mode + "')", checked=(mode === 'domains'))
+              input(type='radio' name='chart-mode', id=mode, oninput!="changeChartMode('" + mode + "')", checked=(mode === 'domains'))
               label.radio-label(for=mode) #{mode}
         ul 
           each entry in [...Object.entries(chartModes).filter((entry) => !!entry[1].length), ['global', globalOptions]]
             -var mode = entry[0]
             -var options = entry[1]
             - var id = mode + '-choices' 
-            li(id=id, style='display: none;')
+            li(id=id, style=(mode === 'global' ? '' : 'display: none;'))
               each option in options
                 - var name = mode + '-' + option.value
                 input(type='checkbox', name=name, id=name, oninput!=(option.changeChartOptions && option.chartOption ? 'changeChartOptions({ ' + option.chartOption + ': event.target.checked })' : 'filterChartDataOn(event)'))
                 label.radio-label(for=name) #{option.name}
           li
             label.date-label(for='start') Last issuance date between
-            input#start(type='date', name='start' oninput!='filterChartDataOn(event)')
+            input#start(type='date' name='start' oninput!='filterChartDataOn(event)')
             label.date-label(for='end') and
-            input#end(type='date', name='end' oninput!='filterChartDataOn(event)')
+            input#end(type='date' name='end' oninput!='filterChartDataOn(event)')
 script(src='https://cdn.amcharts.com/lib/4/core.js')
 script(src='https://cdn.amcharts.com/lib/4/charts.js')
 script(src='https://cdn.amcharts.com/lib/4/plugins/forceDirected.js')

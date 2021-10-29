@@ -546,6 +546,9 @@ function setChartDataWithFilters() {
 
 function toggleChoicesVisibility(prefix) {
   for (const el of document.querySelectorAll("li[id$='-choices']")) {
+    if (el.id.startsWith("global")) {
+      continue;
+    }
     el.style.display = "none";
   }
   const currentEl = document.getElementById(prefix + "-choices");
@@ -576,7 +579,6 @@ function changeChartMode(mode, options) {
       chartOptions = options ? options : {};
       toggleChoicesVisibility("domains");
       checkChoice("domains", "links");
-
       setupChart({ ...chartOptions, mode: "domains" });
       break;
     case "ips":
