@@ -37,12 +37,15 @@ Usage: gcert -t domain.tld -r -d google.com google.fr -o html > report.html
 Retrieves SSL/TLS certificate reports information from the Google Transparency Report for a given domain.
 
 Options:
-  -v, --version                 output the current version
-  -t, --target [domain]         set the target domain
-  -l, --depth-level <level>     set the depth level for the recursive domain discovery (default: "0")
-  -o, --output-format [format]  set the format for the report sent to stdout (choices: "csv", "html", "json", default: "html")
-  -R, --only-resolved           only output resolved domains
-  -r, --resolve                 perform DNS and HTTP/S checks on domains
-  -d, --deny-list [domain...]   set the deny list for domains
-  -h, --help                    display help for command
+  -v, --version                       output the current version
+  -t, --target [domain]               set the target domain
+  -l, --depth-level <level>           set the depth level for the recursive domain discovery (default: "0")
+  -o, --output-format [format]        set the format for the report sent to stdout (choices: "csv", "html", "json", default:
+                                      "html")
+  -R, --only-resolved                 only output resolved domains
+  -r, --resolve                       perform DNS and HTTP/S checks on domains
+  -d, --domain-deny-list [domain...]  set the deny list for domains
+  -wd, --word-deny-list [word...]     set the deny list for words
+  -h, --help                          output usage information
+
 ```

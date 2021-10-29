@@ -26,7 +26,8 @@ class GcertApp {
             maxDepthLevel: 0,
             outputFormat: OutputFormat.html,
             onlyResolved: false,
-            denyList: [],
+            domainDenyList: [],
+            wordDenyList: [],
             resolve: false,
             initialTarget: "",
         };
@@ -34,8 +35,9 @@ class GcertApp {
         program
             .name("gcert")
             .usage("-t domain.tld -r -d google.com google.fr -o html > report.html")
-            .description("Tool to retrieve SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
+            .description("Retrieves SSL/TLS certificate reports information from the Google Transparency Report for a given domain.")
             .version(GcertApp.VERSION, "-v, --version", "output the current version")
+            .helpOption("-h, --help", "output usage information")
             .requiredOption("-t, --target [domain]", "set the target domain")
             .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
             .addOption(new commander_1.Option("-o, --output-format [format]", "set the format for the report sent to stdout")
@@ -43,12 +45,13 @@ class GcertApp {
             .default("html"))
             .addOption(new commander_1.Option("-R, --only-resolved", "only output resolved domains"))
             .addOption(new commander_1.Option("-r, --resolve", "perform DNS and HTTP/S checks on domains"))
-            .addOption(new commander_1.Option("-d, --deny-list [domain...]", "set the deny list for domains"))
+            .addOption(new commander_1.Option("-d, --domain-deny-list [domain...]", "set the deny list for domains"))
+            .addOption(new commander_1.Option("-wd, --word-deny-list [word...]", "set the deny list for words"))
             .parse();
         const opts = program.opts();
         (0, utils_1.log)(GcertApp.HEADER);
         (0, utils_1.log)(GcertApp.VERSION + "\n");
-        let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } = opts;
+        let { depthLevel, outputFormat, onlyResolved, target, domainDenyList, wordDenyList, resolve, } = opts;
         const maxDepthLevel = depthLevel === undefined || isNaN(+depthLevel)
             ? GcertApp.DEFAULT_DEPTH_LEVEL
             : +depthLevel;
@@ -57,14 +60,18 @@ class GcertApp {
         }
         onlyResolved = !!onlyResolved;
         resolve = !!resolve;
-        if (!Array.isArray(denyList)) {
-            denyList = [];
+        if (!Array.isArray(domainDenyList)) {
+            domainDenyList = [];
+        }
+        if (!Array.isArray(wordDenyList)) {
+            wordDenyList = [];
         }
         this.options = {
             maxDepthLevel,
             outputFormat,
             onlyResolved,
-            denyList,
+            domainDenyList,
+            wordDenyList,
             resolve,
             initialTarget: target,
         };
@@ -119,7 +126,7 @@ class GcertApp {
                         if (!cert[5])
                             return;
                         try {
-                            // The needed information are already requested if the DNS names count <= 1
+                            // needed information are already requested if the DNS names count <= 1
                             const { details } = cert[6] > 1
                                 ? parseGoogleDetailsResponse(await axios_1.default.get(GcertApp.GOOGLE_BASE_URL + "/certbyhash", {
                                     params: {

@@ -4,7 +4,8 @@ export interface GcertOptions {
     outputFormat: OutputFormat;
     onlyResolved: boolean;
     resolve: boolean;
-    denyList: string[];
+    domainDenyList: string[];
+    wordDenyList: string[];
     initialTarget: string;
 }
 export declare enum OutputFormat {

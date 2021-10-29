@@ -24,6 +24,12 @@ export class GcertItem {
 
   constructor(payload: GcertItemCreationPayload, app: GcertApp) {
     const { dnsName, domains, queriedDomain, issuanceDate, domain } = payload;
+    const {
+      todoDomains,
+      doneDomains,
+      options: { domainDenyList, wordDenyList },
+    } = app;
+
     if (dnsName.split(" ").length > 1) {
       throw new Error("DNS name with whitespace");
     }
@@ -44,17 +50,28 @@ export class GcertItem {
     }
     GcertItem.dnsNames.add(dnsName);
 
-    if (app.options.denyList.includes(domain)) {
+    const wordDenyListRegex =
+      wordDenyList.length > 0
+        ? RegExp(".*(" + wordDenyList.join("|") + ").*", "i")
+        : null;
+
+    if (domainDenyList.includes(domain) || wordDenyListRegex?.test(domain)) {
       throw new Error("Domain on deny list");
     }
+
     if (
-      !app.todoDomains.has(domain) &&
-      !app.doneDomains.has(domain) &&
-      !app.options.denyList.includes(domain)
+      !todoDomains.has(domain) &&
+      !doneDomains.has(domain) &&
+      !domainDenyList.includes(domain)
     ) {
       log("New domain found : " + domain, Color.FgBlue);
       app.todoDomains.add(domain);
     }
+
+    if (wordDenyListRegex?.test(dnsName)) {
+      throw new Error("DNS name contains a word on deny list");
+    }
+
     this.domain = domain;
     this.dnsName = dnsName;
     this.queriedDomain = queriedDomain;

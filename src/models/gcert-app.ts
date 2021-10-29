@@ -13,7 +13,8 @@ export interface GcertOptions {
   outputFormat: OutputFormat;
   onlyResolved: boolean;
   resolve: boolean;
-  denyList: string[];
+  domainDenyList: string[];
+  wordDenyList: string[];
   initialTarget: string;
 }
 
@@ -99,7 +100,8 @@ export class GcertApp {
     maxDepthLevel: 0,
     outputFormat: OutputFormat.html,
     onlyResolved: false,
-    denyList: [],
+    domainDenyList: [],
+    wordDenyList: [],
     resolve: false,
     initialTarget: "",
   };
@@ -113,6 +115,7 @@ export class GcertApp {
         "Retrieves SSL/TLS certificate reports information from the Google Transparency Report for a given domain."
       )
       .version(GcertApp.VERSION, "-v, --version", "output the current version")
+      .helpOption("-h, --help", "output usage information")
       .requiredOption("-t, --target [domain]", "set the target domain")
       .addOption(
         new Option(
@@ -136,8 +139,14 @@ export class GcertApp {
       )
       .addOption(
         new Option(
-          "-d, --deny-list [domain...]",
+          "-d, --domain-deny-list [domain...]",
           "set the deny list for domains"
+        )
+      )
+      .addOption(
+        new Option(
+          "-wd, --word-deny-list [word...]",
+          "set the deny list for words"
         )
       )
       .parse();
@@ -147,8 +156,15 @@ export class GcertApp {
     log(GcertApp.HEADER);
     log(GcertApp.VERSION + "\n");
 
-    let { depthLevel, outputFormat, onlyResolved, target, denyList, resolve } =
-      opts;
+    let {
+      depthLevel,
+      outputFormat,
+      onlyResolved,
+      target,
+      domainDenyList,
+      wordDenyList,
+      resolve,
+    } = opts;
 
     const maxDepthLevel =
       depthLevel === undefined || isNaN(+depthLevel)
@@ -162,15 +178,20 @@ export class GcertApp {
     onlyResolved = !!onlyResolved;
     resolve = !!resolve;
 
-    if (!Array.isArray(denyList)) {
-      denyList = [];
+    if (!Array.isArray(domainDenyList)) {
+      domainDenyList = [];
+    }
+
+    if (!Array.isArray(wordDenyList)) {
+      wordDenyList = [];
     }
 
     this.options = {
       maxDepthLevel,
       outputFormat,
       onlyResolved,
-      denyList,
+      domainDenyList,
+      wordDenyList,
       resolve,
       initialTarget: target,
     };
@@ -248,7 +269,7 @@ export class GcertApp {
             if (!cert[5]) return;
 
             try {
-              // The needed information are already requested if the DNS names count <= 1
+              // needed information are already requested if the DNS names count <= 1
               const { details } =
                 cert[6] > 1
                   ? parseGoogleDetailsResponse(

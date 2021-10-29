@@ -1,12 +1,14 @@
 import { GcertApp } from "./models";
 import { log } from "./utils";
 
+const app = new GcertApp();
+
 process.on("SIGINT", () => {
+  app.outputCertificateReports();
   process.exit(2);
 });
 
 (async () => {
-  const app = new GcertApp();
   await app.getCertificateRecords();
   app.outputCertificateReports();
 })().catch((err) => {

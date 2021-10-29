@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("./models");
 const utils_1 = require("./utils");
+const app = new models_1.GcertApp();
 process.on("SIGINT", () => {
+    app.outputCertificateReports();
     process.exit(2);
 });
 (async () => {
-    const app = new models_1.GcertApp();
     await app.getCertificateRecords();
     app.outputCertificateReports();
 })().catch((err) => {

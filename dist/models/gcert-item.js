@@ -8,6 +8,7 @@ const utils_1 = require("../utils");
 class GcertItem {
     constructor(payload, app) {
         const { dnsName, domains, queriedDomain, issuanceDate, domain } = payload;
+        const { todoDomains, doneDomains, options: { domainDenyList, wordDenyList }, } = app;
         if (dnsName.split(" ").length > 1) {
             throw new Error("DNS name with whitespace");
         }
@@ -26,14 +27,20 @@ class GcertItem {
             throw new Error("DNS name already done");
         }
         GcertItem.dnsNames.add(dnsName);
-        if (app.options.denyList.includes(domain)) {
+        const wordDenyListRegex = wordDenyList.length > 0
+            ? RegExp(".*(" + wordDenyList.join("|") + ").*", "i")
+            : null;
+        if (domainDenyList.includes(domain) || (wordDenyListRegex === null || wordDenyListRegex === void 0 ? void 0 : wordDenyListRegex.test(domain))) {
             throw new Error("Domain on deny list");
         }
-        if (!app.todoDomains.has(domain) &&
-            !app.doneDomains.has(domain) &&
-            !app.options.denyList.includes(domain)) {
+        if (!todoDomains.has(domain) &&
+            !doneDomains.has(domain) &&
+            !domainDenyList.includes(domain)) {
             (0, utils_1.log)("New domain found : " + domain, utils_1.Color.FgBlue);
             app.todoDomains.add(domain);
+        }
+        if (wordDenyListRegex === null || wordDenyListRegex === void 0 ? void 0 : wordDenyListRegex.test(dnsName)) {
+            throw new Error("DNS name contains a word on deny list");
         }
         this.domain = domain;
         this.dnsName = dnsName;
