@@ -73,7 +73,7 @@ class GcertApp {
             domainDenyList,
             wordDenyList,
             resolve,
-            initialTarget: target,
+            initialTarget: target.toLowerCase(),
         };
     }
     async getCertificateRecords(target = this.options.initialTarget, depthLevel = 0) {
@@ -123,6 +123,7 @@ class GcertApp {
                 const pagePromises = [];
                 for (let i = 0; i < certs.length; i++) {
                     const handleCertificateRecord = async (cert, index) => {
+                        var _a;
                         if (!cert[5])
                             return;
                         try {
@@ -150,7 +151,7 @@ class GcertApp {
                             for (const dnsName of details[7]) {
                                 if (!dnsName)
                                     continue;
-                                const domain = psl_1.default.get(dnsName);
+                                const domain = (_a = psl_1.default.get(dnsName)) === null || _a === void 0 ? void 0 : _a.toLowerCase();
                                 if (!domain)
                                     continue;
                                 domains.add(domain);

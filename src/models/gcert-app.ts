@@ -193,7 +193,7 @@ export class GcertApp {
       domainDenyList,
       wordDenyList,
       resolve,
-      initialTarget: target,
+      initialTarget: target.toLowerCase(),
     };
   }
 
@@ -299,7 +299,7 @@ export class GcertApp {
               const domains: Set<string> = new Set();
               for (const dnsName of details[7]) {
                 if (!dnsName) continue;
-                const domain = psl.get(dnsName);
+                const domain = psl.get(dnsName)?.toLowerCase();
                 if (!domain) continue;
                 domains.add(domain);
                 dnsNamesWithDomain.push({
