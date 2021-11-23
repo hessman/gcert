@@ -14,6 +14,8 @@ The HTML report provides a force-directed tree graph to analyze the results (tha
 
 The `sample.html` HTML is available [here](./sample.html).
 
+The tree graph is collapsed by default only if there are more than 500 subdomains found.
+
 By domain :
 ![force directed tree](./docs/graph-domains.jpg)
 

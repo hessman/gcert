@@ -38,6 +38,21 @@ main h1 {
   font-size: 20px;
 }
 
+.github-link {
+  text-align: center;
+  display: block;
+  padding: 0.5rem;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.command {
+  text-align: center;
+  display: block;
+  padding: 0.5rem;
+  font-size: 15px;
+}
+
 #chartdiv {
   height: 100%;
   border-top: 1px solid grey;
@@ -74,7 +89,7 @@ main label.date-label:first-of-type {
 }
 
 main nav {
-  padding: 1.75rem 1.5rem;
+  padding: 0.5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

@@ -31,7 +31,7 @@ function setupChartDatas() {
       const payload = {
         id: "domain-" + domain,
         name: domain,
-        value: 40,
+        value: 30,
       };
       const index =
         perDomainData.push({ ...payload, linkWith: [], children: [] }) - 1;
@@ -57,7 +57,7 @@ function setupChartDatas() {
     perDomainData[currentDomainIndex].children.push({
       id: "dnsName-" + gcertItem.dnsName,
       name: gcertItem.dnsName,
-      value: 25,
+      value: 20,
       httpStatus: gcertItem.httpStatus,
       resolvedIpAddress: gcertItem.resolvedIpAddress,
       lastIssuanceDate: gcertItem.date ? new Date(gcertItem.date) : null,
@@ -71,7 +71,7 @@ function setupChartDatas() {
           perIpData.push({
             id: "ip-" + gcertItem.resolvedIpAddress,
             name: gcertItem.resolvedIpAddress,
-            value: 40,
+            value: 30,
             linkWith: [],
             children: [],
           }) - 1;
@@ -82,7 +82,7 @@ function setupChartDatas() {
       perIpData[ipIndex].children.push({
         id: "dnsName-" + gcertItem.dnsName,
         name: gcertItem.dnsName,
-        value: 25,
+        value: 20,
         linkWith: [],
         httpStatus: gcertItem.httpStatus,
         resolvedIpAddress: gcertItem.resolvedIpAddress,
@@ -263,6 +263,8 @@ function setupChart(options) {
   }
   createChart();
   setupChartDatas();
+
+  networkSeries.maxLevels = (baseChartData.length > 500) ? 1 : undefined;
 
   const isDomainChart = options.mode === "domains";
   const isIpsChart = options.mode === "ips";

@@ -446,6 +446,7 @@ export class GcertApp {
               ],
             },
             globalOptions: [{ name: "Only resolved", value: "only-resolved" }],
+            command: process.argv.splice(2).join(" "),
           })
         );
       default:
