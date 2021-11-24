@@ -2,6 +2,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  position: relative;
 }
 
 html,
@@ -30,6 +31,18 @@ main {
 
 main > * {
   width: 100%;
+}
+
+main button#toggle-fullscreen {
+  width: 30px;
+  height: 30px;
+  color: black;
+  padding: 0.25rem 0.3rem;
+  position: absolute;
+  font-size: 18pt;
+  bottom: 20px;
+  z-index: 100;
+  right: 20px;
 }
 
 main h1 {

@@ -9,9 +9,11 @@ html(lang="en")
       include ../css/index.css
   body
     main
-      h1 #{title}
-      p.command() #{command}
-      a.github-link(href="https://github.com/hessman/gcert") hessman/gcert
+      button#toggle-fullscreen(onclick="toggleFullscreen()") 🖵
+      div#header
+        h1 #{title}
+        p.command() #{command}
+        a.github-link(href="https://github.com/hessman/gcert") hessman/gcert
       div#chartdiv
       nav
         ul 
@@ -41,5 +43,3 @@ script(src='https://cdn.amcharts.com/lib/4/themes/animated.js')
 script
   | var baseChartData = JSON.parse(!{quote}!{baseChartData}!{quote});
   include ../js/index.js
-</script>
-</html>

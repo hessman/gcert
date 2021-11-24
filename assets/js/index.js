@@ -264,7 +264,7 @@ function setupChart(options) {
   createChart();
   setupChartDatas();
 
-  networkSeries.maxLevels = (baseChartData.length > 500) ? 1 : undefined;
+  networkSeries.maxLevels = baseChartData.length > 500 ? 1 : undefined;
 
   const isDomainChart = options.mode === "domains";
   const isIpsChart = options.mode === "ips";
@@ -603,6 +603,17 @@ function changeChartMode(mode, options) {
 function changeChartOptions(options) {
   const opts = { ...(chartOptions ? chartOptions : {}), ...options };
   changeChartMode(chartMode, opts);
+}
+
+function toggleFullscreen() {
+  const header = document.getElementById("header");
+  const nav = document.getElementsByTagName("nav")[0];
+  if (header) {
+    header.style.display = header.style.display === "none" ? "block" : "none";
+  }
+  if (nav) {
+    nav.style.display = nav.style.display === "none" ? "flex" : "none";
+  }
 }
 
 changeChartMode("domains");
