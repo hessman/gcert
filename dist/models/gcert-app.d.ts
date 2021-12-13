@@ -11,7 +11,8 @@ export interface GcertOptions {
 export declare enum OutputFormat {
     json = "json",
     csv = "csv",
-    html = "html"
+    html = "html",
+    none = "none"
 }
 export declare type GoogleCertificateList = [
     [

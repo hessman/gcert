@@ -10,7 +10,7 @@ The final report is sent to *stdout* and the progression to *stderr*.
 
 The HTML report provides a force-directed tree graph to analyze the results (thanks [NorthBlue333](https://github.com/northblue333) :tada:) :
 
-`docker run --rm hessman/gcert -t root-me.org -r -l 1 -d cloudflare.com cloudflaressl.com > sample.html`
+`docker run --rm hessman/gcert -t root-me.org -r -l 1 -d cloudflare.com cloudflaressl.com -o html > sample.html`
 
 The `sample.html` HTML is available [here](./sample.html).
 
@@ -42,8 +42,7 @@ Options:
   -v, --version                       output the current version
   -t, --target [domain]               set the target domain
   -l, --depth-level <level>           set the depth level for the recursive domain discovery (default: "0")
-  -o, --output-format [format]        set the format for the report sent to stdout (choices: "csv", "html", "json", default:
-                                      "html")
+  -o, --output-format [format]        set the format for the report sent to stdout (choices: "csv", "html", "json", "none", default: "none")
   -R, --only-resolved                 only output resolved domains
   -r, --resolve                       perform DNS and HTTP/S checks on domains
   -d, --domain-deny-list [domain...]  set the deny list for domains

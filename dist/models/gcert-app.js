@@ -16,6 +16,7 @@ var OutputFormat;
     OutputFormat["json"] = "json";
     OutputFormat["csv"] = "csv";
     OutputFormat["html"] = "html";
+    OutputFormat["none"] = "none";
 })(OutputFormat = exports.OutputFormat || (exports.OutputFormat = {}));
 class GcertApp {
     constructor() {
@@ -41,8 +42,13 @@ class GcertApp {
             .requiredOption("-t, --target [domain]", "set the target domain")
             .addOption(new commander_1.Option("-l, --depth-level <level>", "set the depth level for the recursive domain discovery").default("0"))
             .addOption(new commander_1.Option("-o, --output-format [format]", "set the format for the report sent to stdout")
-            .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
-            .default("html"))
+            .choices([
+            OutputFormat.csv,
+            OutputFormat.html,
+            OutputFormat.json,
+            OutputFormat.none,
+        ])
+            .default("none"))
             .addOption(new commander_1.Option("-R, --only-resolved", "only output resolved domains"))
             .addOption(new commander_1.Option("-r, --resolve", "perform DNS and HTTP/S checks on domains"))
             .addOption(new commander_1.Option("-d, --domain-deny-list [domain...]", "set the deny list for domains"))
@@ -56,7 +62,7 @@ class GcertApp {
             ? GcertApp.DEFAULT_DEPTH_LEVEL
             : +depthLevel;
         if (!(outputFormat in OutputFormat)) {
-            outputFormat = OutputFormat.html;
+            outputFormat = OutputFormat.none;
         }
         onlyResolved = !!onlyResolved;
         resolve = !!resolve;
@@ -212,8 +218,13 @@ class GcertApp {
             }
             await Promise.all(domainPromises);
         }
+        (0, utils_1.log)(`Done. ${this.items.length} unique (sub)domain(s) found.`, utils_1.Color.FgCyan);
     }
     outputCertificateReports() {
+        if (this.options.outputFormat === OutputFormat.none) {
+            return;
+        }
+        (0, utils_1.log)(`Outputting ${this.options.outputFormat} report to stdout.`, utils_1.Color.FgCyan);
         switch (this.options.outputFormat) {
             case OutputFormat.json:
                 (0, utils_1.output)(JSON.stringify(this.items));

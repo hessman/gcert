@@ -22,6 +22,7 @@ export enum OutputFormat {
   json = "json",
   csv = "csv",
   html = "html",
+  none = "none",
 }
 
 export type GoogleCertificateList = [
@@ -128,8 +129,13 @@ export class GcertApp {
           "-o, --output-format [format]",
           "set the format for the report sent to stdout"
         )
-          .choices([OutputFormat.csv, OutputFormat.html, OutputFormat.json])
-          .default("html")
+          .choices([
+            OutputFormat.csv,
+            OutputFormat.html,
+            OutputFormat.json,
+            OutputFormat.none,
+          ])
+          .default("none")
       )
       .addOption(
         new Option("-R, --only-resolved", "only output resolved domains")
@@ -172,7 +178,7 @@ export class GcertApp {
         : +depthLevel;
 
     if (!(outputFormat in OutputFormat)) {
-      outputFormat = OutputFormat.html;
+      outputFormat = OutputFormat.none;
     }
 
     onlyResolved = !!onlyResolved;
@@ -367,9 +373,17 @@ export class GcertApp {
       }
       await Promise.all(domainPromises);
     }
+    log(
+      `Done. ${this.items.length} unique (sub)domain(s) found.`,
+      Color.FgCyan
+    );
   }
 
   outputCertificateReports() {
+    if (this.options.outputFormat === OutputFormat.none) {
+      return;
+    }
+    log(`Outputting ${this.options.outputFormat} report to stdout.`, Color.FgCyan);
     switch (this.options.outputFormat) {
       case OutputFormat.json:
         output(JSON.stringify(this.items));
