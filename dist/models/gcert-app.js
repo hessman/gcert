@@ -218,7 +218,6 @@ class GcertApp {
             }
             await Promise.all(domainPromises);
         }
-        (0, utils_1.log)(`Done. ${this.items.length} unique (sub)domain(s) found.`, utils_1.Color.FgCyan);
     }
     outputCertificateReports() {
         if (this.options.outputFormat === OutputFormat.none) {

@@ -1,5 +1,5 @@
 import { GcertApp } from "./models";
-import { log } from "./utils";
+import { Color, log } from "./utils";
 
 const app = new GcertApp();
 
@@ -10,6 +10,10 @@ process.on("SIGINT", () => {
 
 (async () => {
   await app.getCertificateRecords();
+  log(
+    `${app.items.length} unique (sub)domain(s) found for ${app.options.initialTarget}`,
+    Color.FgCyan
+  );
   app.outputCertificateReports();
 })().catch((err) => {
   log(err);

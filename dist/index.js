@@ -9,6 +9,7 @@ process.on("SIGINT", () => {
 });
 (async () => {
     await app.getCertificateRecords();
+    (0, utils_1.log)(`${app.items.length} unique (sub)domain(s) found for ${app.options.initialTarget}`, utils_1.Color.FgCyan);
     app.outputCertificateReports();
 })().catch((err) => {
     (0, utils_1.log)(err);

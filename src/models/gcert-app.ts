@@ -373,10 +373,6 @@ export class GcertApp {
       }
       await Promise.all(domainPromises);
     }
-    log(
-      `Done. ${this.items.length} unique (sub)domain(s) found.`,
-      Color.FgCyan
-    );
   }
 
   outputCertificateReports() {
